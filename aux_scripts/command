@@ -1,0 +1,1 @@
+python ssearch.py -config resnet50.config -name RESNET -mode eval-all-text-visual -dataset UNIQLO

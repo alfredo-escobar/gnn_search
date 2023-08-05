@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Product Similarity Explorer</title>
+</head>
+<body>
+    <h1>Product Similarity Explorer</h1>
+    <label for="iter">Select an "iter" value:</label>
+    <select id="iter" onchange="updateTable()">
+        <option value="">Select an option</option>
+        <option value="0">0</option>
+        <option value="1">1</option>
+        <option value="11">11</option>
+        <option value="21">21</option>
+        <option value="31">31</option>
+        <option value="41">41</option>
+        <option value="51">51</option>
+        <option value="61">61</option>
+        <option value="71">71</option>
+        <option value="81">81</option>
+        <option value="91">91</option>
+        <option value="101">101</option>
+    </select>
+    <div id="mAP"></div>
+    <br>
+    <label for="index">Select a product index number:</label>
+    <select id="index" onchange="updateTable()">
+        <option value="">Select an option</option>
+    </select>
+
+    <br>
+    <table id="queryTable" border="1" style="display: none;">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Title</th>
+                <th>CategoryTree</th>
+                <th>ProductDescriptionENshort</th>
+                <th>ProductDescriptionEN2</th>
+                <th>ProductDescriptionEN</th>
+            </tr>
+        </thead>
+        <tbody id="queryTableBody">
+        </tbody>
+    </table>
+
+    <br>
+    <table id="resultTable" border="1" style="display: none;">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Title</th>
+                <th>CategoryTree</th>
+                <th>ProductDescriptionENshort</th>
+                <th>ProductDescriptionEN2</th>
+                <th>ProductDescriptionEN</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+    </table>
+    <script>
+        // Load the JSON data
+        let catalogueData, testSetData, similarsData;
+
+        Promise.all([
+            fetch('catalogue.json').then(response => response.json()),
+            fetch('test_set_integers.json').then(response => response.json()),
+            fetch('similars.json').then(response => response.json())
+        ]).then(([catalogue, testSet, similars]) => {
+            catalogueData = catalogue;
+            testSetData = testSet;
+            similarsData = similars;
+
+            // Populate the "index" dropdown with options
+            const indexDropdown = document.getElementById('index');
+            for (const index of testSetData) {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = index;
+                indexDropdown.appendChild(option);
+            }
+        });
+
+        // Function to update the table based on the selected options
+        function updateTable() {
+            const selectedIter = document.getElementById('iter').value;
+            const selectedIndex = document.getElementById('index').value;
+
+            const mAPscore = document.getElementById('mAP');
+
+            const resultTable = document.getElementById('resultTable');
+            const tableBody = document.getElementById('tableBody');
+            const queryTable = document.getElementById('queryTable');
+            const queryTableBody = document.getElementById('queryTableBody');
+
+            if (selectedIter && selectedIndex) {
+                const selectedIterData = similarsData[selectedIter];
+                const idxDict = selectedIterData["idx_dict"];
+                const simIdxs = idxDict[selectedIndex];
+
+                mAPscore.innerHTML = 'iter mAP score: ' + selectedIterData["mAP"];
+
+
+                let queryTableContent = '<tr>';
+
+                const productData = catalogueData[selectedIndex]
+                var imgCount = 0;
+                for (const string of productData) {
+                    if (imgCount == 0) {
+                        //queryTableContent += `<td><img width="100" src="../catalogues/UNIQLO/train/${string}"></td>`;
+                        queryTableContent += `<td><img width="100" src="${string}"></td>`;
+                        //queryTableContent += `<td><img width="100" src="https://gumlet.assettype.com/greaterkashmir%2Fimport%2F2021%2F04%2Fsmile-02.jpg?w=1200&auto=format%2Ccompress&ogImage=true&enlarge=true"></td>`;
+                        imgCount += 1;
+                    } else {
+                        queryTableContent += `<td>${string}</td>`;
+                    }
+                }
+
+                queryTableContent += '</tr>';
+
+
+                let tableContent = '';
+
+                for (const idx of simIdxs) {                    
+                    tableContent += '<tr>';
+
+                    const productData = catalogueData[idx]
+                    var imgCount = 0;
+                    for (const string of productData) {
+                        if (imgCount == 0) {
+                            //tableContent += `<td><img width="100" src="../catalogues/UNIQLO/train/${string}"></td>`;
+                            tableContent += `<td><img width="100" src="${string}"></td>`;
+                            //tableContent += `<td><img width="100" src="https://gumlet.assettype.com/greaterkashmir%2Fimport%2F2021%2F04%2Fsmile-02.jpg?w=1200&auto=format%2Ccompress&ogImage=true&enlarge=true"></td>`;
+                            imgCount += 1;
+                        } else {
+                            tableContent += `<td>${string}</td>`;
+                        }
+                    }
+
+                    tableContent += '</tr>';
+                }
+
+                queryTableBody.innerHTML = queryTableContent;
+                queryTable.style.display = 'block';
+                tableBody.innerHTML = tableContent;
+                resultTable.style.display = 'block';
+            } else {
+                queryTableBody.innerHTML = '';
+                queryTable.style.display = 'none';
+                tableBody.innerHTML = '';
+                resultTable.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
