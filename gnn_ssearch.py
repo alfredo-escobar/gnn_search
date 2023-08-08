@@ -63,7 +63,7 @@ class SSearch :
         self.process_fun =  imgproc.process_image
         #loading catalog
         self.ssearch_dir = os.path.join(self.configuration.get_data_dir(), 'ssearch')
-        catalog_file = os.path.join(self.ssearch_dir, 'catalog.txt')        
+        catalog_file = os.path.join(self.ssearch_dir, 'visual_embeddings_catalog.txt')        
         assert os.path.exists(catalog_file), '{} does not exist'.format(catalog_file)
         print('loading catalog ...')
         self.load_catalog(catalog_file)
@@ -748,22 +748,46 @@ if __name__ == '__main__' :
     parser = argparse.ArgumentParser(description = "Similarity Search")        
     parser.add_argument("-config", type=str, help="<str> configuration file", required=True)
     parser.add_argument("-name", type=str, help=" name of section in the configuration file", required=True)                
-    parser.add_argument("-mode", type=str, choices=['compute', 'utils', "gnn"], help=" mode of operation", required=True)
+    parser.add_argument("-mode", type=str, choices=['compute', 'compute_test_queries', 'utils', "gnn"], help=" mode of operation", required=True)
     parser.add_argument('-umap', action='store_true')
     parser.add_argument('-real', action='store_true', help="whether to use real images or not when evaluating")
     parser.add_argument("-dataset",  type=str, choices=['Pepeganga', 'PepegangaCLIPBASE', 'Cartier', 'CartierCLIPBASE', 'IKEA', 'IKEACLIPBASE', 'UNIQLO', 'UNIQLOCLIPBASE', 'WorldMarket', 'WorldMarketCLIPBASE', 'Homy', 'HomyCLIPBASE'], help="dataset", required=True)
     parser.add_argument("-list", type=str,  help=" list of image to process", required=False)
     parser.add_argument("-odir", type=str,  help=" output dir", required=False, default='.')
-    pargs = parser.parse_args()     
-    configuration_file = pargs.config        
+    pargs = parser.parse_args()
+    configuration_file = pargs.config
     ssearch = SSearch(pargs.config, pargs.name)
     norm = 'None'
     
     dataset = pargs.dataset
     use_real_queries = pargs.real
 
-    if pargs.mode == 'compute' :        
+    if pargs.mode == 'compute':        
         ssearch.compute_features_from_catalog()
+    
+    if pargs.mode == 'compute_test_queries':
+        eval_path = "./catalogues/{}/test".format(dataset)
+        eval_files = [f for f in os.listdir(eval_path) if os.path.isfile(join(eval_path, f))]
+
+        im_query = ssearch.read_image("./catalogues/{}/test/".format(dataset) + eval_files[0])
+        q_fv = ssearch.compute_features(im_query, expand_dims = True)
+
+        test_fv = np.empty((len(eval_files), q_fv.shape[1]), dtype = np.float32)
+
+        filename_ve_test = "./catalogues/{}/ssearch/visual_embeddings_test_catalog.txt".format(dataset)
+
+        with open(filename_ve_test, 'w') as file_ve_test:
+
+            for i, fquery in enumerate(eval_files):
+
+                file_ve_test.write(fquery + '\n')
+
+                fquery_full_path = "./catalogues/{}/test/".format(dataset) + fquery
+                im_query = ssearch.read_image(fquery_full_path)
+                q_fv = ssearch.compute_features(im_query, expand_dims = True)
+                test_fv[i, ] = q_fv
+        
+        np.save("./catalogues/{}/embeddings/ResNet/visual_embeddings_test.npy".format(dataset), test_fv)
 
     if pargs.mode == 'utils':
         ssearch.load_features()
@@ -777,14 +801,14 @@ if __name__ == '__main__' :
         # Quantity of training iterations
         iterations = 101
 
-        test_w_train_set = True
+        test_w_train_set = False
 
         adjust_query = False
 
         visual_embeddings = np.load("./catalogues/{}/embeddings/ResNet/visual_embeddings.npy".format(dataset))
         text_embeddings = np.load("./catalogues/{}/embeddings/{}/text_embeddings.npy".format(dataset, model_name))
         
-        visual_embeddings_catalog = "./catalogues/{}/ssearch/catalog.txt".format(dataset)
+        visual_embeddings_catalog = "./catalogues/{}/ssearch/visual_embeddings_catalog.txt".format(dataset)
         text_embeddings_catalog = "./catalogues/{}/ssearch/text_embeddings_catalog.txt".format(dataset)
         text_embeddings = reorder_text_embeddings(text_embeddings, visual_embeddings_catalog, text_embeddings_catalog)
 
@@ -802,11 +826,22 @@ if __name__ == '__main__' :
         real_df = None
 
         if test_w_train_set:
-            eval_path = "./catalogues/{}/test_from_train_set".format(dataset)
-            eval_files = ["./catalogues/{}/test_from_train_set/".format(dataset) + f for f in os.listdir(eval_path) if os.path.isfile(join(eval_path, f))]
+
+            with open(visual_embeddings_catalog, 'r') as file_ve:
+                lines_ve = file_ve.read().splitlines()
+
+            test_indexes = np.load("./catalogues/{}/test_set_integers.npy".format(dataset))
+            eval_files = ["./catalogues/{}/test_from_train_set/".format(dataset) + lines_ve[idx] for idx in test_indexes]
+
         else:
-            eval_path = "./catalogues/{}/test".format(dataset)
-            eval_files = ["./catalogues/{}/test/".format(dataset) + f for f in os.listdir(eval_path) if os.path.isfile(join(eval_path, f))]
+
+            visual_embeddings_test_catalog = "./catalogues/{}/ssearch/visual_embeddings_test_catalog.txt".format(dataset)
+
+            with open(visual_embeddings_test_catalog, 'r') as file_ve:
+                lines_ve = file_ve.read().splitlines()
+            
+            eval_files = ["./catalogues/{}/test/".format(dataset) + line for line in lines_ve]
+
 
         mAP_dictionary = {"ssearch" : ssearch,
                           "eval_files" : eval_files,
