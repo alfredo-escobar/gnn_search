@@ -56,7 +56,7 @@ class SSearch :
         self.process_fun =  imgproc.process_image
         #loading catalog
         self.ssearch_dir = os.path.join(self.configuration.get_data_dir(), 'ssearch')
-        catalog_file = os.path.join(self.ssearch_dir, 'catalog.txt')        
+        catalog_file = os.path.join(self.ssearch_dir, 'visual_embeddings_catalog.txt')        
         assert os.path.exists(catalog_file), '{} does not exist'.format(catalog_file)
         print('loading catalog ...')
         self.load_catalog(catalog_file)

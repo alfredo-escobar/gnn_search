@@ -58,7 +58,7 @@ class SSearch :
         self.process_fun =  imgproc.process_image
         #loading catalog
         self.ssearch_dir = os.path.join(self.configuration.get_data_dir(), 'ssearch')
-        catalog_file = os.path.join(self.ssearch_dir, 'catalog.txt')        
+        catalog_file = os.path.join(self.ssearch_dir, 'visual_embeddings_catalog.txt')        
         assert os.path.exists(catalog_file), '{} does not exist'.format(catalog_file)
         print('loading catalog ...')
         self.load_catalog(catalog_file)
@@ -847,7 +847,7 @@ if __name__ == '__main__' :
         visual_embeddings = np.load("./catalogues/{}/embeddings/ResNet/visual_embeddings.npy".format(dataset))
         text_embeddings = np.load("./catalogues/{}/embeddings/{}/text_embeddings.npy".format(dataset, model_name))
         
-        visual_embeddings_catalog = "./catalogues/{}/ssearch/catalog.txt".format(dataset)
+        visual_embeddings_catalog = "./catalogues/{}/ssearch/visual_embeddings_catalog.txt".format(dataset)
         text_embeddings_catalog = "./catalogues/{}/ssearch/text_embeddings_catalog.txt".format(dataset)
         text_embeddings = reorder_text_embeddings(text_embeddings, visual_embeddings_catalog, text_embeddings_catalog)
 

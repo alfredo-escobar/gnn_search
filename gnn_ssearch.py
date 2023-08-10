@@ -435,15 +435,15 @@ def avg_precision(y, y_pred):
     return ap, ap_tree, ap_sub
 
 
-def get_current_mAP(current_embeddings,
-                    ssearch,
-                    eval_files,
-                    metric,
-                    norm,
-                    adjust_query,
-                    original_embeddings,
-                    df,
-                    real_df):
+def get_current_mAP_og(current_embeddings,
+                       ssearch,
+                       eval_files,
+                       metric,
+                       norm,
+                       adjust_query,
+                       original_embeddings,
+                       df,
+                       real_df):
     
     ssearch.features = current_embeddings
     
@@ -473,25 +473,28 @@ def get_current_mAP(current_embeddings,
     return mAP
 
 
-def get_current_mAP_2(current_embeddings,
-                      test_indexes,
-                      current_iteration,
-                      sim_visual,
-                      ssearch,
-                      eval_files,
-                      metric,
-                      norm,
-                      adjust_query,
-                      original_embeddings,
-                      df,
-                      real_df):
-    
+def get_current_mAP(current_embeddings,
+                    current_iteration,
+                    sim_visual,
+                    ssearch,
+                    visual_embeddings_test,
+                    test_indexes,
+                    eval_files,
+                    metric,
+                    norm,
+                    adjust_query,
+                    original_embeddings,
+                    df,
+                    real_df,
+                    top):
+
     ssearch.features = current_embeddings
     
     ap_arr = []
     ap_arr_tree = []
     ap_arr_sub = []
 
+    save_labels = True
     save_images = False
 
     print("Computing mAP")
@@ -500,10 +503,22 @@ def get_current_mAP_2(current_embeddings,
         "idx_dict" : {}
     }
 
+    GC_list_all = []
+    CT_list_all = []
+    SC_list_all = []
+
     for i in range(len(eval_files)):
         fquery = eval_files[i]
-        im_query = current_embeddings[test_indexes[i]].reshape(1, -1)
-        idx, dist_sorted, q_fv, data_search = ssearch.search(im_query, metric=metric, norm=norm, top=20, adjust_query=adjust_query, original_embeddings=original_embeddings, df=df, query_is_feature=True)         
+
+        if test_indexes is not None:
+            # The query is taken from the training set
+            im_query = current_embeddings[test_indexes[i]].reshape(1, -1)
+        else:
+            # The query does not come from the training set,
+            # its visual embeddings have been computed before training
+            im_query = visual_embeddings_test[i].reshape(1, -1)
+
+        idx, dist_sorted, q_fv, data_search = ssearch.search(im_query, metric=metric, norm=norm, top=top, adjust_query=adjust_query, original_embeddings=original_embeddings, df=df, query_is_feature=True)         
         r_filenames = ssearch.get_filenames(idx)
         
         base_category, products = get_product_and_category(r_filenames, dataframe=df, real_df=real_df)
@@ -512,11 +527,27 @@ def get_current_mAP_2(current_embeddings,
         ap_arr_tree.append(ap_tree)
         ap_arr_sub.append(ap_sub)
 
-        results_dict["idx_dict"][test_indexes[i].item()] = []
+        if save_labels:
 
-        for result_idx in idx:
-            similarity_score = sim_visual[test_indexes[i], result_idx].numpy()
-            results_dict["idx_dict"][test_indexes[i].item()].append([result_idx.item(), similarity_score.item()])
+            GC_list = [base_category[0]]
+            CT_list = [base_category[1]]
+            SC_list = [base_category[2]]
+
+            for product in products:
+                GC_list.append(product[1])
+                CT_list.append(product[2])
+                SC_list.append(product[3])
+            
+            GC_list_all.append(GC_list)
+            CT_list_all.append(CT_list)
+            SC_list_all.append(SC_list)
+
+        if test_indexes is not None:
+            results_dict["idx_dict"][test_indexes[i].item()] = []
+
+            for result_idx in idx:
+                similarity_score = sim_visual[test_indexes[i], result_idx].numpy()
+                results_dict["idx_dict"][test_indexes[i].item()].append([result_idx.item(), similarity_score.item()])
 
         if save_images:
             image_r= ssearch.draw_result(r_filenames)
@@ -528,7 +559,10 @@ def get_current_mAP_2(current_embeddings,
     mAP = statistics.mean(ap_arr)
     mAP_tree = statistics.mean(ap_arr_tree)
     mAP_sub = statistics.mean(ap_arr_sub)
-    print("mAP(GC): {}, mAP(CT): {}".format(mAP, mAP_tree))
+    print("mAP(GC): {}, mAP(CT): {}, mAP(SC): {}".format(mAP, mAP_tree, mAP_sub))
+
+    if save_labels:
+        save_result_labels_csv(GC_list_all, CT_list_all, SC_list_all, dataset, current_iteration)
 
     results_dict["mAP"] = mAP
 
@@ -636,9 +670,6 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
 
     adjust_range = True
 
-    if test_w_train_set:
-        test_indexes = np.load("./catalogues/{}/test_set_integers.npy".format(dataset))
-
     similarity_func = get_cos_similarity_tensor
     #similarity_func = get_cos_softmax_similarity_tensor
     #similarity_func = get_sqrt_similarity_tensor
@@ -647,8 +678,7 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
     similarity_text = similarity_func(text_embeddings)
     similarity_visual = similarity_func(visual_embeddings)
 
-    # Fines de testeo:
-    #save_most_similar_pairs(similarity_text.numpy())
+    #save_most_similar_pairs(similarity_text.numpy(), dataset)
 
     #units = 1024
     units = visual_embeddings.shape[1]
@@ -668,15 +698,13 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
     search_results_list = {}
 
     if mAP_dictionary is not None:
-        if test_w_train_set:
-            current_mAP, results_dict = get_current_mAP_2(current_embeddings = visual_embeddings,
-                                                          test_indexes = test_indexes,
-                                                          current_iteration = 0,
-                                                          sim_visual = similarity_visual,
-                                                          **mAP_dictionary)
-            search_results_list[0] = results_dict
-        else:
-            current_mAP = get_current_mAP(current_embeddings = visual_embeddings, **mAP_dictionary)
+
+        # OJO: CURRENT_EMBEDDINGS DEBE SER VISUAL, NO TEXTUAL
+        current_mAP, results_dict = get_current_mAP(current_embeddings = visual_embeddings,
+                                                    current_iteration = 0,
+                                                    sim_visual = similarity_visual,
+                                                    **mAP_dictionary)
+        search_results_list[0] = results_dict
         
         historical_mAP["iters"].append(0)
         historical_mAP["mAPs"].append(current_mAP)
@@ -718,15 +746,11 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
 
             if mAP_dictionary is not None:
 
-                if test_w_train_set:
-                    current_mAP, results_dict = get_current_mAP_2(current_embeddings = new_visual_embeddings.numpy(),
-                                                                  test_indexes = test_indexes,
-                                                                  current_iteration = it,
-                                                                  sim_visual = similarity_visual,
-                                                                  **mAP_dictionary)
-                    search_results_list[it] = results_dict
-                else:
-                    current_mAP = get_current_mAP(current_embeddings = new_visual_embeddings.numpy(), **mAP_dictionary)
+                current_mAP, results_dict = get_current_mAP(current_embeddings = new_visual_embeddings.numpy(),
+                                                            current_iteration = it,
+                                                            sim_visual = similarity_visual,
+                                                            **mAP_dictionary)
+                search_results_list[it] = results_dict
 
                 historical_mAP["iters"].append(it)
                 historical_mAP["mAPs"].append(current_mAP)
@@ -735,9 +759,10 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
     plot_mAP(historical_mAP)
     #plot_prob_gt(all_sims_and_probs)
     
-    save_sims_and_probs(all_sims_and_probs)
+    save_sims_and_probs(all_sims_and_probs, dataset)
     
     if test_w_train_set:
+        # JSON to be used by the "similar_explorer" web app
         with open("./similar_explorer/similars.json", "w") as json_file:
             json.dump(search_results_list, json_file)
     
@@ -766,16 +791,23 @@ if __name__ == '__main__' :
         ssearch.compute_features_from_catalog()
     
     if pargs.mode == 'compute_test_queries':
+
+        # Prepares files for eval files, for testing with items both inside and outside
+        # of the training set
+
         eval_path = "./catalogues/{}/test".format(dataset)
         eval_files = [f for f in os.listdir(eval_path) if os.path.isfile(join(eval_path, f))]
 
+        # The following 2 lines are run to get the dimension of the generated queries
         im_query = ssearch.read_image("./catalogues/{}/test/".format(dataset) + eval_files[0])
         q_fv = ssearch.compute_features(im_query, expand_dims = True)
+        # ----------------
 
         test_fv = np.empty((len(eval_files), q_fv.shape[1]), dtype = np.float32)
 
         filename_ve_test = "./catalogues/{}/ssearch/visual_embeddings_test_catalog.txt".format(dataset)
 
+        # Save text file with the filenames of all image queries
         with open(filename_ve_test, 'w') as file_ve_test:
 
             for i, fquery in enumerate(eval_files):
@@ -787,7 +819,26 @@ if __name__ == '__main__' :
                 q_fv = ssearch.compute_features(im_query, expand_dims = True)
                 test_fv[i, ] = q_fv
         
+        # Save numpy backup with the visual embeddings of all queries
         np.save("./catalogues/{}/embeddings/ResNet/visual_embeddings_test.npy".format(dataset), test_fv)
+
+        # The following lines are to get the size of the training dataset
+        filename_ve = "./catalogues/{}/ssearch/visual_embeddings_catalog.txt".format(dataset)
+
+        with open(filename_ve, 'r') as file_ve:
+            lines_ve = file_ve.read().splitlines()
+        # ----------------
+
+        random_integers = np.random.randint(0, len(lines_ve), len(eval_files))
+        random_integers = np.sort(random_integers)
+
+        # Save numpy backup with indexes of the training dataset to be used for testing
+        np.save("./catalogues/{}/ssearch/test_set_integers.npy".format(dataset), random_integers)
+
+        # Save JSON with indexes of the training dataset to be used by the "similar_explorer" web app
+        with open('./similar_explorer/test_set_integers.json', 'w') as json_file:
+            json.dump(random_integers.tolist(), json_file)
+
 
     if pargs.mode == 'utils':
         ssearch.load_features()
@@ -795,15 +846,21 @@ if __name__ == '__main__' :
 
     if pargs.mode == 'gnn':
 
-        # Text embeddings model
+        # Text embeddings model.
         model_name = "RoBERTa"
         
-        # Quantity of training iterations
+        # Quantity of training iterations.
         iterations = 101
 
+        # Whether to use in-training visual embeddings as queries.
+        # Remember to run gnn_search.py with -mode compute_test_queries before.
         test_w_train_set = False
 
+        # Whether to use VETE-B query adjustment or not.
         adjust_query = False
+
+        # Quantity of results to get in search.
+        results_per_query = 20
 
         visual_embeddings = np.load("./catalogues/{}/embeddings/ResNet/visual_embeddings.npy".format(dataset))
         text_embeddings = np.load("./catalogues/{}/embeddings/{}/text_embeddings.npy".format(dataset, model_name))
@@ -827,30 +884,37 @@ if __name__ == '__main__' :
 
         if test_w_train_set:
 
+            visual_embeddings_test = None
+
             with open(visual_embeddings_catalog, 'r') as file_ve:
                 lines_ve = file_ve.read().splitlines()
 
-            test_indexes = np.load("./catalogues/{}/test_set_integers.npy".format(dataset))
+            test_indexes = np.load("./catalogues/{}/ssearch/test_set_integers.npy".format(dataset))
             eval_files = ["./catalogues/{}/test_from_train_set/".format(dataset) + lines_ve[idx] for idx in test_indexes]
 
         else:
 
+            visual_embeddings_test = np.load("./catalogues/{}/embeddings/ResNet/visual_embeddings_test.npy".format(dataset))
             visual_embeddings_test_catalog = "./catalogues/{}/ssearch/visual_embeddings_test_catalog.txt".format(dataset)
 
             with open(visual_embeddings_test_catalog, 'r') as file_ve:
                 lines_ve = file_ve.read().splitlines()
             
+            test_indexes = None
             eval_files = ["./catalogues/{}/test/".format(dataset) + line for line in lines_ve]
 
 
         mAP_dictionary = {"ssearch" : ssearch,
+                          "visual_embeddings_test": visual_embeddings_test,
+                          "test_indexes": test_indexes,
                           "eval_files" : eval_files,
                           "metric" : metric,
                           "norm" : norm,
                           "adjust_query" : adjust_query,
                           "original_embeddings" : original_features,
                           "df" : df,
-                          "real_df" : real_df}
+                          "real_df" : real_df,
+                          "top" : results_per_query}
         
 
         # lr = 0.01

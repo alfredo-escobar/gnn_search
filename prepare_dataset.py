@@ -3,7 +3,7 @@ Current requirements:
 - "embeddings/CLIP/visual_embeddings.npy"
 - "embeddings/ResNet/visual_embeddings.npy"
 - "embeddings/RoBERTa/text_embeddings.npy"
-- "ssearch/catalog.txt" (renamed from visual_embedding_catalog.txt)
+- "ssearch/visual_embeddings_catalog.txt"
 - "ssearch/text_embeddings_catalog.txt"
 """
 

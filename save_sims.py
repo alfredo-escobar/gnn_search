@@ -2,7 +2,7 @@ import csv
 import numpy as np
 from openpyxl import Workbook
 
-def save_most_similar_pairs(similarity):
+def save_most_similar_pairs(similarity, dataset):
 
     # 2D indexes for the similarity matrix:
     similarity_idx = np.triu_indices(similarity.shape[0], 1)
@@ -19,7 +19,7 @@ def save_most_similar_pairs(similarity):
     sheet = workbook.active
 
     # Read data from the CSV file
-    with open("./catalogues/UNIQLO/train_search.csv", 'r', encoding='utf-8') as csv_file:
+    with open("./catalogues/{}/train_search.csv".format(dataset), 'r', encoding='utf-8') as csv_file:
         reader = csv.reader(csv_file, delimiter=';')
         csv_data = list(reader)
 
@@ -41,10 +41,10 @@ def save_most_similar_pairs(similarity):
         sheet.cell(row=i+1, column=15, value=similarity[row_index_1][row_index_2])
 
     # Save the XLSX file
-    workbook.save("most_similar_pairs.xlsx")
+    workbook.save("./catalogues/{}/results/most_similar_pairs.xlsx".format(dataset))
 
 
-def save_sims_and_probs(all_sims_and_probs):
+def save_sims_and_probs(all_sims_and_probs, dataset):
     # Create a new workbook
     workbook = Workbook()
 
@@ -65,4 +65,23 @@ def save_sims_and_probs(all_sims_and_probs):
     workbook.remove(workbook['Sheet'])
 
     # Save the workbook to a .xlsx file
-    workbook.save('sims_and_probs.xlsx')
+    workbook.save('./catalogues/{}/results/sims_and_probs.xlsx'.format(dataset))
+
+
+def save_result_labels_csv(GC_list_all, CT_list_all, SC_list_all, dataset, current_iteration):
+
+    GC_filename = "./catalogues/{}/results/labels/labels_GC_iter_{}.csv".format(dataset, current_iteration)
+    CT_filename = "./catalogues/{}/results/labels/labels_CT_iter_{}.csv".format(dataset, current_iteration)
+    SC_filename = "./catalogues/{}/results/labels/labels_SC_iter_{}.csv".format(dataset, current_iteration)
+
+    with open(GC_filename, mode="w", newline="") as GC_file:
+        GC_writer = csv.writer(GC_file)
+        GC_writer.writerows(GC_list_all)
+
+    with open(CT_filename, mode="w", newline="") as CT_file:
+        CT_writer = csv.writer(CT_file)
+        CT_writer.writerows(CT_list_all)
+
+    with open(SC_filename, mode="w", newline="") as SC_file:
+        SC_writer = csv.writer(SC_file)
+        SC_writer.writerows(SC_list_all)

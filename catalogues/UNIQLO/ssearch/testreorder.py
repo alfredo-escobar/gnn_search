@@ -1,6 +1,6 @@
 import numpy as np
 
-ve_catalog = "./catalogues/UNIQLO/ssearch/catalog.txt"
+ve_catalog = "./catalogues/UNIQLO/ssearch/visual_embeddings_catalog.txt"
 te_catalog = "./catalogues/UNIQLO/ssearch/text_embeddings_catalog.txt"
 
 # Read the contents of a.txt and b.txt

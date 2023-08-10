@@ -5,57 +5,104 @@
 </head>
 <body>
     <h1>Product Similarity Explorer</h1>
-    <label for="iter">Select an "iter" value:</label>
-    <select id="iter" onchange="updateTable()">
-        <option value="">Select an option</option>
-        <option value="0">0</option>
-        <option value="1">1</option>
-        <option value="11">11</option>
-        <option value="21">21</option>
-        <option value="31">31</option>
-        <option value="41">41</option>
-        <option value="51">51</option>
-        <option value="61">61</option>
-        <option value="71">71</option>
-        <option value="81">81</option>
-        <option value="91">91</option>
-        <option value="101">101</option>
-    </select>
-    <div id="mAP"></div>
-    <br>
     <label for="index">Select a product index number:</label>
     <select id="index" onchange="updateTable()">
         <option value="">Select an option</option>
     </select>
 
     <br>
-    <table id="queryTable" border="1" style="display: none;">
-        <thead>
-            <tr>
-                <th>Image</th>
-                <th>Title</th>
-                <th>CategoryTree</th>
-                <th>ProductDescriptionENshort</th>
-                <th>ProductDescriptionEN2</th>
-                <th>ProductDescriptionEN</th>
-            </tr>
-        </thead>
-        <tbody id="queryTableBody">
-        </tbody>
-    </table>
+
+    <div style="width: 70%">
+        <table id="queryTable" border="1" style="display: none">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Title</th>
+                    <th>CategoryTree</th>
+                    <th>ProductDescriptionENshort</th>
+                    <th>ProductDescriptionEN2</th>
+                    <th>ProductDescriptionEN</th>
+                </tr>
+            </thead>
+            <tbody id="queryTableBody">
+            </tbody>
+        </table>
+    </div>
 
     <br>
-    <table id="resultTable" border="1" style="display: none;">
-        <thead>
-            <tr>
-                <th>Image</th>
-                <th>Title</th>
-                <th>Similarity</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody">
-        </tbody>
-    </table>
+
+    <div style="float: left; width: 35%">
+
+        <label for="iter1">Select an "iter" value:</label>
+        <select id="iter1" onchange="updateTable()">
+            <option value="">Select an option</option>
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="11">11</option>
+            <option value="21">21</option>
+            <option value="31">31</option>
+            <option value="41">41</option>
+            <option value="51">51</option>
+            <option value="61">61</option>
+            <option value="71">71</option>
+            <option value="81">81</option>
+            <option value="91">91</option>
+            <option value="101">101</option>
+        </select>
+        <div id="mAP1"></div>
+        <br>
+
+        <table id="resultTable1" border="1" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Title</th>
+                    <th>Similarity</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody1">
+            </tbody>
+        </table>
+
+    </div>
+
+    <div style="float: left; width: 35%">
+
+        <label for="iter2">Select an "iter" value:</label>
+        <select id="iter2" onchange="updateTable()">
+            <option value="">Select an option</option>
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="11">11</option>
+            <option value="21">21</option>
+            <option value="31">31</option>
+            <option value="41">41</option>
+            <option value="51">51</option>
+            <option value="61">61</option>
+            <option value="71">71</option>
+            <option value="81">81</option>
+            <option value="91">91</option>
+            <option value="101">101</option>
+        </select>
+        <div id="mAP2"></div>
+        <br>
+
+        <table id="resultTable2" border="1" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Title</th>
+                    <th>Similarity</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody2">
+            </tbody>
+        </table>
+
+    </div>
+
+
+
     <script>
         // Load the JSON data
         let catalogueData, testSetData, similarsData;
@@ -81,24 +128,24 @@
 
         // Function to update the table based on the selected options
         function updateTable() {
-            const selectedIter = document.getElementById('iter').value;
             const selectedIndex = document.getElementById('index').value;
 
-            const mAPscore = document.getElementById('mAP');
-
-            const resultTable = document.getElementById('resultTable');
-            const tableBody = document.getElementById('tableBody');
             const queryTable = document.getElementById('queryTable');
             const queryTableBody = document.getElementById('queryTableBody');
 
-            if (selectedIter && selectedIndex) {
-                const selectedIterData = similarsData[selectedIter];
-                const idxDict = selectedIterData["idx_dict"];
-                const simIdxs = idxDict[selectedIndex];
+            const selectedIter1 = document.getElementById('iter1').value;
+            const mAPscore1 = document.getElementById('mAP1');
 
-                mAPscore.innerHTML = 'iter mAP score: ' + selectedIterData["mAP"];
+            const resultTable1 = document.getElementById('resultTable1');
+            const tableBody1 = document.getElementById('tableBody1');
 
+            const selectedIter2 = document.getElementById('iter2').value;
+            const mAPscore2 = document.getElementById('mAP2');
 
+            const resultTable2 = document.getElementById('resultTable2');
+            const tableBody2 = document.getElementById('tableBody2');
+
+            if (selectedIndex) {
                 let queryTableContent = '<tr>';
 
                 const productData = catalogueData[selectedIndex]
@@ -116,33 +163,78 @@
 
                 queryTableContent += '</tr>';
 
+                queryTableBody.innerHTML = queryTableContent;
+                queryTable.style.display = 'block';
 
-                let tableContent = '';
+            } else {
+                queryTableBody.innerHTML = '';
+                queryTable.style.display = 'none';
+            }
+
+
+            if (selectedIter1 && selectedIndex) {
+                const selectedIterData = similarsData[selectedIter1];
+                const idxDict = selectedIterData["idx_dict"];
+                const simIdxs = idxDict[selectedIndex];
+
+                mAPscore1.innerHTML = 'iter mAP score: ' + selectedIterData["mAP"];
+
+                let tableContent1 = '';
 
                 for (const idxPair of simIdxs) {                    
-                    tableContent += '<tr>';
+                    tableContent1 += '<tr>';
 
                     const productData = catalogueData[idxPair[0]]
                     var productImageURL = productData[0];
                     var productTitle = productData[1];
                     var productSimilarity = idxPair[1]
 
-                    tableContent += `<td><img width="100" src="${productImageURL}"></td>`;
-                    tableContent += `<td>${productTitle}</td>`;
-                    tableContent += `<td>${productSimilarity}</td>`;
+                    tableContent1 += `<td><img width="100" src="${productImageURL}"></td>`;
+                    tableContent1 += `<td>${productTitle}</td>`;
+                    tableContent1 += `<td>${productSimilarity}</td>`;
 
-                    tableContent += '</tr>';
+                    tableContent1 += '</tr>';
                 }
 
-                queryTableBody.innerHTML = queryTableContent;
-                queryTable.style.display = 'block';
-                tableBody.innerHTML = tableContent;
-                resultTable.style.display = 'block';
+                tableBody1.innerHTML = tableContent1;
+                resultTable1.style.display = 'block';
+
             } else {
-                queryTableBody.innerHTML = '';
-                queryTable.style.display = 'none';
-                tableBody.innerHTML = '';
-                resultTable.style.display = 'none';
+                tableBody1.innerHTML = '';
+                resultTable1.style.display = 'none';
+            }
+
+
+            if (selectedIter2 && selectedIndex) {
+                const selectedIterData = similarsData[selectedIter2];
+                const idxDict = selectedIterData["idx_dict"];
+                const simIdxs = idxDict[selectedIndex];
+
+                mAPscore2.innerHTML = 'iter mAP score: ' + selectedIterData["mAP"];
+
+                let tableContent2 = '';
+
+                for (const idxPair of simIdxs) {                    
+                    tableContent2 += '<tr>';
+
+                    const productData = catalogueData[idxPair[0]]
+                    var productImageURL = productData[0];
+                    var productTitle = productData[1];
+                    var productSimilarity = idxPair[1]
+
+                    tableContent2 += `<td><img width="100" src="${productImageURL}"></td>`;
+                    tableContent2 += `<td>${productTitle}</td>`;
+                    tableContent2 += `<td>${productSimilarity}</td>`;
+
+                    tableContent2 += '</tr>';
+                }
+
+                tableBody2.innerHTML = tableContent2;
+                resultTable2.style.display = 'block';
+
+            } else {
+                tableBody2.innerHTML = '';
+                resultTable2.style.display = 'none';
             }
         }
     </script>
