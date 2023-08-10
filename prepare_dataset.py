@@ -23,6 +23,11 @@ def create_folder(folder_path):
         print(f"Error creating folder '{folder_path}': {e}")
 
 
+def create_blank_file(file_path):
+    with open(file_path, 'w') as file:
+        pass
+
+
 def process_csv_to_xlsx(df, output_file):
     # Function to extract the third element from a '/' separated string
     def get_subcategory(category_tree):
@@ -81,13 +86,16 @@ def generate_NP(dataset, model = "ResNet"):
 
 if __name__ == "__main__":
 
-    dataset = "Homy"
+    dataset = "Pepeganga"
     model = "ResNet"
 
     create_folder("./catalogues/{}/data".format(dataset))
     create_folder("./catalogues/{}/data/word2vec".format(dataset))
+    create_blank_file("./catalogues/{}/data/word2vec/placeholder".format(dataset))
+
     create_folder("./catalogues/{}/results".format(dataset))
-    create_folder("./catalogues/{}/ssearch".format(dataset))
+    create_folder("./catalogues/{}/results/labels".format(dataset))
+    create_blank_file("./catalogues/{}/results/labels/placeholder".format(dataset))
     
     generate_XLSX(dataset)
     generate_NP(dataset, model)
