@@ -13,18 +13,18 @@ import argparse
 import numpy as np
 import pandas as pd
 import statistics
-import umap.plot
+#import umap.plot
 import torch
-from visual_text_parameters import parameters
+#from visual_text_parameters import parameters
 from data_utils import prepare_dataset
 from bpm_parameters import *
 import sys
 from PIL import Image, ImageDraw, ImageFont
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
-from clip_ssearch import CLIPSSearch
-from pprint import pprint
-from scipy.spatial.distance import cdist
+#from clip_ssearch import CLIPSSearch
+#from pprint import pprint
+#from scipy.spatial.distance import cdist
 
 import json
 

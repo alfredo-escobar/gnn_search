@@ -11,7 +11,7 @@ def plot_mAP(historical_mAP):
 
         #plt.xticks(color='w')
         #plt.show()
-        plt.savefig("mAP.png")
+        plt.savefig("mAP.pdf")
 
 
 def plot_loss(historical_loss):
@@ -23,7 +23,7 @@ def plot_loss(historical_loss):
     ax.set_title('Loss in training')
 
     #plt.show()
-    plt.savefig("loss.png")
+    plt.savefig("loss.pdf")
 
 
 def plot_probs(similarity_1D, probs):
