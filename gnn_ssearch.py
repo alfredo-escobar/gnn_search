@@ -494,7 +494,7 @@ def get_current_mAP(current_embeddings,
     ap_arr_tree = []
     ap_arr_sub = []
 
-    save_labels = True
+    save_labels = False
     save_images = False
 
     print("Computing mAP")
