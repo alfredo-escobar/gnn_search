@@ -1,15 +1,18 @@
 import matplotlib.pyplot as plt
 
 def plot_mAP(historical_mAP):
-    if len(historical_mAP["mAPs"]) > 0:
+    if len(historical_mAP["iters"]) > 0:
         fig, ax = plt.subplots()
 
-        ax.plot(historical_mAP["iters"], historical_mAP["mAPs"], 'o-')
+        ax.plot(historical_mAP["iters"], historical_mAP["mAP_GC"], 'o-', color="red", label="mAP(GC)")
+        ax.plot(historical_mAP["iters"], historical_mAP["mAP_CT"], 'o-', color="green", label="mAP(CT)")
+        ax.plot(historical_mAP["iters"], historical_mAP["mAP_SC"], 'o-', color="blue", label="mAP(SC)")
         ax.set_xlabel('Iteration')
         ax.set_ylabel('mAP')
         ax.set_title('mAP in training')
 
         #plt.xticks(color='w')
+        plt.legend()
         #plt.show()
         plt.savefig("mAP.pdf")
 

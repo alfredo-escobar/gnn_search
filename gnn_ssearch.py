@@ -566,7 +566,7 @@ def get_current_mAP(current_embeddings,
 
     results_dict["mAP"] = mAP
 
-    return mAP, results_dict
+    return [mAP, mAP_tree, mAP_sub], results_dict
 
 
 def reorder_text_embeddings(text_embeddings, ve_catalog, te_catalog):
@@ -689,7 +689,7 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
 
     # For plotting purposes:
     historical_loss = {"iters" : [], "losses" : []}
-    historical_mAP = {"iters" : [], "mAPs" : []}
+    historical_mAP = {"iters" : [], "mAP_GC" : [], "mAP_CT" : [], "mAP_SC" : []}
 
     # Similarity, prob_gt and prob_pred values by iteration to be saved to an .xlsx file
     all_sims_and_probs = {}
@@ -707,7 +707,9 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
         search_results_list[0] = results_dict
         
         historical_mAP["iters"].append(0)
-        historical_mAP["mAPs"].append(current_mAP)
+        historical_mAP["mAP_GC"].append(current_mAP[0])
+        historical_mAP["mAP_CT"].append(current_mAP[1])
+        historical_mAP["mAP_SC"].append(current_mAP[2])
 
     for it in range(1, iterations+1):
 
@@ -753,7 +755,9 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
                 search_results_list[it] = results_dict
 
                 historical_mAP["iters"].append(it)
-                historical_mAP["mAPs"].append(current_mAP)
+                historical_mAP["mAP_GC"].append(current_mAP[0])
+                historical_mAP["mAP_CT"].append(current_mAP[1])
+                historical_mAP["mAP_SC"].append(current_mAP[2])
 
     plot_loss(historical_loss)
     plot_mAP(historical_mAP)
