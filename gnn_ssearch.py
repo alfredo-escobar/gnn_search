@@ -88,7 +88,7 @@ class SSearch :
         print('features loaded ok')
         
     def load_catalog(self, catalog):
-        with open(catalog) as f_in :
+        with open(catalog, encoding='utf-8') as f_in :
             data_path = os.path.abspath(self.configuration.get_data_dir())
             self.filenames = [os.path.join(data_path, "train", filename.strip()) for filename in f_in]
             # self.filenames = [filename.strip() for filename in f_in ]
