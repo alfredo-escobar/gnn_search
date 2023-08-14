@@ -88,7 +88,7 @@ class SSearch :
         print('features loaded ok')
         
     def load_catalog(self, catalog):
-        with open(catalog, encoding='utf-8') as f_in :
+        with open(catalog, encoding="iso-8859-1") as f_in :
             data_path = os.path.abspath(self.configuration.get_data_dir())
             self.filenames = [os.path.join(data_path, "train", filename.strip()) for filename in f_in]
             # self.filenames = [filename.strip() for filename in f_in ]
@@ -573,7 +573,7 @@ def reorder_text_embeddings(text_embeddings, ve_catalog, te_catalog):
     # Necessary for both the visual and text embeddings
     # to be in the same order
 
-    with open(ve_catalog, 'r') as file_ve, open(te_catalog, 'r') as file_te:
+    with open(ve_catalog, 'r', encoding="iso-8859-1") as file_ve, open(te_catalog, 'r', encoding="iso-8859-1") as file_te:
         lines_ve = file_ve.read().splitlines()
         lines_te = file_te.read().splitlines()
 
@@ -808,7 +808,7 @@ if __name__ == '__main__' :
         filename_ve_test = "./catalogues/{}/ssearch/visual_embeddings_test_catalog.txt".format(dataset)
 
         # Save text file with the filenames of all image queries
-        with open(filename_ve_test, 'w') as file_ve_test:
+        with open(filename_ve_test, 'w', encoding="iso-8859-1") as file_ve_test:
 
             for i, fquery in enumerate(eval_files):
 
@@ -825,7 +825,7 @@ if __name__ == '__main__' :
         # The following lines are to get the size of the training dataset
         filename_ve = "./catalogues/{}/ssearch/visual_embeddings_catalog.txt".format(dataset)
 
-        with open(filename_ve, 'r') as file_ve:
+        with open(filename_ve, 'r', encoding="iso-8859-1") as file_ve:
             lines_ve = file_ve.read().splitlines()
         # ----------------
 
@@ -886,7 +886,7 @@ if __name__ == '__main__' :
 
             visual_embeddings_test = None
 
-            with open(visual_embeddings_catalog, 'r') as file_ve:
+            with open(visual_embeddings_catalog, 'r', encoding="iso-8859-1") as file_ve:
                 lines_ve = file_ve.read().splitlines()
 
             test_indexes = np.load("./catalogues/{}/ssearch/test_set_integers.npy".format(dataset))
@@ -897,7 +897,7 @@ if __name__ == '__main__' :
             visual_embeddings_test = np.load("./catalogues/{}/embeddings/ResNet/visual_embeddings_test.npy".format(dataset))
             visual_embeddings_test_catalog = "./catalogues/{}/ssearch/visual_embeddings_test_catalog.txt".format(dataset)
 
-            with open(visual_embeddings_test_catalog, 'r') as file_ve:
+            with open(visual_embeddings_test_catalog, 'r', encoding="iso-8859-1") as file_ve:
                 lines_ve = file_ve.read().splitlines()
             
             test_indexes = None
