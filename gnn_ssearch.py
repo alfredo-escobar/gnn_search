@@ -494,7 +494,7 @@ def get_current_mAP(current_embeddings,
     ap_arr_tree = []
     ap_arr_sub = []
 
-    save_labels = False
+    save_labels = True
     save_images = False
 
     print("Computing mAP")
@@ -864,7 +864,7 @@ if __name__ == '__main__' :
         adjust_query = False
 
         # Quantity of results to get in search.
-        results_per_query = 20
+        results_per_query = 100
 
         visual_embeddings = np.load("./catalogues/{}/embeddings/ResNet/visual_embeddings.npy".format(dataset))
         text_embeddings = np.load("./catalogues/{}/embeddings/{}/text_embeddings.npy".format(dataset, model_name))
