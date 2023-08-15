@@ -23,3 +23,5 @@ datasets_conv4_block6_out.rar
 *.jpeg
 *.jpg
 
+/catalogues/Pepeganga/ssearch/features.np
+/catalogues/Pepeganga/embeddings/ResNet/visual_embeddings.npy
