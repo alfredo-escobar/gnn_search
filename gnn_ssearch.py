@@ -858,13 +858,13 @@ if __name__ == '__main__' :
 
         # Whether to use in-training visual embeddings as queries.
         # Remember to run gnn_search.py with -mode compute_test_queries before.
-        test_w_train_set = False
+        test_w_train_set = True
 
         # Whether to use VETE-B query adjustment or not.
         adjust_query = False
 
         # Quantity of results to get in search.
-        results_per_query = 20
+        results_per_query = 100
 
         visual_embeddings = np.load("./catalogues/{}/embeddings/ResNet/visual_embeddings.npy".format(dataset))
         text_embeddings = np.load("./catalogues/{}/embeddings/{}/text_embeddings.npy".format(dataset, model_name))
