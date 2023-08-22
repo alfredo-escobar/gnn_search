@@ -62,7 +62,7 @@ class SSearch :
         #self.process_fun =  imgproc.process_image_visual_attribute
         self.process_fun =  imgproc.process_image
         #loading catalog
-        self.ssearch_dir = os.path.join(self.configuration.get_data_dir(), 'ssearch')
+        self.ssearch_dir = os.path.join(self.configuration.get_data_dir(), dataset, 'ssearch')
         catalog_file = os.path.join(self.ssearch_dir, 'visual_embeddings_catalog.txt')        
         assert os.path.exists(catalog_file), '{} does not exist'.format(catalog_file)
         print('loading catalog ...')
@@ -771,8 +771,8 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
                 historical_mAP["mAP_CT"].append(current_mAP[1])
                 historical_mAP["mAP_SC"].append(current_mAP[2])
 
-    plot_loss(historical_loss)
-    plot_mAP(historical_mAP)
+    plot_loss(historical_loss, dataset)
+    plot_mAP(historical_mAP, dataset)
     #plot_prob_gt(all_sims_and_probs)
     
     save_sims_and_probs(all_sims_and_probs, dataset)
@@ -795,14 +795,15 @@ if __name__ == '__main__' :
     parser.add_argument("-dataset",  type=str, choices=['Pepeganga', 'PepegangaCLIPBASE', 'Cartier', 'CartierCLIPBASE', 'IKEA', 'IKEACLIPBASE', 'UNIQLO', 'UNIQLOCLIPBASE', 'WorldMarket', 'WorldMarketCLIPBASE', 'Homy', 'HomyCLIPBASE'], help="dataset", required=True)
     parser.add_argument("-list", type=str,  help=" list of image to process", required=False)
     parser.add_argument("-odir", type=str,  help=" output dir", required=False, default='.')
+
     pargs = parser.parse_args()
     configuration_file = pargs.config
-    ssearch = SSearch(pargs.config, pargs.name)
-    norm = 'None'
-    
     dataset = pargs.dataset
     use_real_queries = pargs.real
 
+    ssearch = SSearch(pargs.config, pargs.name)
+    norm = 'None'
+    
     if pargs.mode == 'compute':        
         ssearch.compute_features_from_catalog()
     

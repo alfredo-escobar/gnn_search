@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-def plot_mAP(historical_mAP):
+def plot_mAP(historical_mAP, dataset):
     if len(historical_mAP["iters"]) > 0:
         fig, ax = plt.subplots()
 
@@ -14,10 +14,10 @@ def plot_mAP(historical_mAP):
         #plt.xticks(color='w')
         plt.legend()
         #plt.show()
-        plt.savefig("mAP.pdf")
+        plt.savefig('./catalogues/{}/results/mAP.pdf'.format(dataset))
 
 
-def plot_loss(historical_loss):
+def plot_loss(historical_loss, dataset):
     fig, ax = plt.subplots()
 
     ax.plot(historical_loss["iters"], historical_loss["losses"], 'o-')
@@ -26,7 +26,7 @@ def plot_loss(historical_loss):
     ax.set_title('Loss in training')
 
     #plt.show()
-    plt.savefig("loss.pdf")
+    plt.savefig('./catalogues/{}/results/loss.pdf'.format(dataset))
 
 
 def plot_probs(similarity_1D, probs):
