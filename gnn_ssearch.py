@@ -688,7 +688,7 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
     similarity_text = similarity_func(text_embeddings)
     similarity_visual = similarity_func(visual_embeddings)
 
-    similarity_text = adjust_sim_text(similarity_text)
+    #similarity_text = adjust_sim_text(similarity_text)
 
     #save_most_similar_pairs(similarity_text.numpy(), dataset)
 
