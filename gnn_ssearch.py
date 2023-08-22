@@ -659,10 +659,25 @@ def reduce_range_to_0_to_1(sim_text, sim_visual, margin=0.01):
     return new_sim_text, new_sim_visual
 
 
-def gnn(fts, adj, transform, activation):
-    seq_fts = transform(fts)
-    ret_fts = tf.matmul(adj, seq_fts)
-    return activation(ret_fts)
+class GNN(tf.keras.Model):
+    def __init__(self, adj, lyr):
+        # adj: text similarity tensor
+        super(GNN, self).__init__()
+        self.transform = lyr
+        self.adj = adj
+    
+    def call(self, inputs):
+        # inputs: visual embeddings matrix
+        seq_fts = self.transform(inputs)
+        ret_fts = tf.matmul(self.adj, seq_fts)
+        new_fts = tf.nn.relu(ret_fts)
+        return new_fts
+
+
+# def gnn(fts, adj, transform, activation):
+#     seq_fts = transform(fts)
+#     ret_fts = tf.matmul(adj, seq_fts)
+#     return activation(ret_fts)
 
 
 def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_dictionary = None, test_w_train_set = False):
@@ -683,6 +698,7 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
     #units = 1024
     units = visual_embeddings.shape[1]
     lyr = tf.keras.layers.Dense(units)
+    model_gnn = GNN(adj=similarity_text, lyr=lyr)
 
     #optimizer = tf.keras.optimizers.SGD(learning_rate=lr, momentum=0.9)
     optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
@@ -716,7 +732,8 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
         print("Training iteration", it)
 
         with tf.GradientTape() as t:
-            new_visual_embeddings = gnn(visual_embeddings, similarity_text, lyr, tf.nn.relu)
+            #new_visual_embeddings = gnn(visual_embeddings, similarity_text, lyr, tf.nn.relu)
+            new_visual_embeddings = model_gnn.call(inputs=visual_embeddings)
 
             similarity_visual = similarity_func(new_visual_embeddings)
 
@@ -743,6 +760,8 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
         eval_window = 10
 
         if (it % eval_window) == 1:
+
+            #model_gnn.save_weights('weights_iter_{}'.format(it))
 
             all_sims_and_probs["iter_" + str(it)] = sims_and_probs
 
