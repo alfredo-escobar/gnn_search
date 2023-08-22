@@ -703,6 +703,8 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
     #optimizer = tf.keras.optimizers.SGD(learning_rate=lr, momentum=0.9)
     optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 
+    eval_window = 10
+
     # For plotting purposes:
     historical_loss = {"iters" : [], "losses" : []}
     historical_mAP = {"iters" : [], "mAP_GC" : [], "mAP_CT" : [], "mAP_SC" : []}
@@ -731,6 +733,9 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
 
         print("Training iteration", it)
 
+        if (it % eval_window) == 1:
+            model_gnn.save_weights('./catalogues/{}/results/weights/weights_iter_{}'.format(dataset, it))
+
         with tf.GradientTape() as t:
             #new_visual_embeddings = gnn(visual_embeddings, similarity_text, lyr, tf.nn.relu)
             new_visual_embeddings = model_gnn.call(inputs=visual_embeddings)
@@ -757,11 +762,7 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
         historical_loss["iters"].append(it)
         historical_loss["losses"].append(loss.numpy().item())
 
-        eval_window = 10
-
         if (it % eval_window) == 1:
-
-            #model_gnn.save_weights('weights_iter_{}'.format(it))
 
             all_sims_and_probs["iter_" + str(it)] = sims_and_probs
 
@@ -796,7 +797,7 @@ if __name__ == '__main__' :
     parser = argparse.ArgumentParser(description = "Similarity Search")        
     parser.add_argument("-config", type=str, help="<str> configuration file", required=True)
     parser.add_argument("-name", type=str, help=" name of section in the configuration file", required=True)                
-    parser.add_argument("-mode", type=str, choices=['compute', 'compute_test_queries', 'utils', "gnn"], help=" mode of operation", required=True)
+    parser.add_argument("-mode", type=str, choices=['compute', 'compute_test_queries', 'utils', "gnn", "test"], help=" mode of operation", required=True)
     parser.add_argument('-umap', action='store_true')
     parser.add_argument('-real', action='store_true', help="whether to use real images or not when evaluating")
     parser.add_argument("-dataset",  type=str, choices=['Pepeganga', 'PepegangaCLIPBASE', 'Cartier', 'CartierCLIPBASE', 'IKEA', 'IKEACLIPBASE', 'UNIQLO', 'UNIQLOCLIPBASE', 'WorldMarket', 'WorldMarketCLIPBASE', 'Homy', 'HomyCLIPBASE'], help="dataset", required=True)
@@ -948,35 +949,127 @@ if __name__ == '__main__' :
         
 
 
-"""         ssearch.features = new_visual_embeddings
+        """         ssearch.features = new_visual_embeddings
 
-        if pargs.list is None:
-            ap_arr = []
-            ap_arr_tree = []
-            ap_arr_sub = []
+                if pargs.list is None:
+                    ap_arr = []
+                    ap_arr_tree = []
+                    ap_arr_sub = []
 
-            save_results = False
+                    save_results = False
 
-            for fquery in eval_files:
-                im_query = ssearch.read_image(fquery)
-                idx, dist_sorted, q_fv, data_search = ssearch.search(im_query, metric=metric, norm=norm, top=20, adjust_query=adjust_query, original_embeddings=original_features, df=df)         
-                r_filenames = ssearch.get_filenames(idx)
-                
-                r_filenames.insert(0, fquery)
-                base_category, products = get_product_and_category(r_filenames, dataframe=df, real_df=real_df)
-                ap, ap_tree, ap_sub = avg_precision(base_category, products)
-                ap_arr.append(ap)
-                ap_arr_tree.append(ap_tree)
-                ap_arr_sub.append(ap_sub)
+                    for fquery in eval_files:
+                        im_query = ssearch.read_image(fquery)
+                        idx, dist_sorted, q_fv, data_search = ssearch.search(im_query, metric=metric, norm=norm, top=20, adjust_query=adjust_query, original_embeddings=original_features, df=df)         
+                        r_filenames = ssearch.get_filenames(idx)
+                        
+                        r_filenames.insert(0, fquery)
+                        base_category, products = get_product_and_category(r_filenames, dataframe=df, real_df=real_df)
+                        ap, ap_tree, ap_sub = avg_precision(base_category, products)
+                        ap_arr.append(ap)
+                        ap_arr_tree.append(ap_tree)
+                        ap_arr_sub.append(ap_sub)
 
-                if save_results:
-                    image_r= ssearch.draw_result(r_filenames)
-                    output_name = os.path.basename(fquery) + '_{}_{}_result.png'.format(metric, norm)
-                    output_name = os.path.join("./catalogues/{}/results".format(dataset), output_name)
-                    io.imsave(output_name, image_r)
-                    print('result saved at {}'.format(output_name))
+                        if save_results:
+                            image_r= ssearch.draw_result(r_filenames)
+                            output_name = os.path.basename(fquery) + '_{}_{}_result.png'.format(metric, norm)
+                            output_name = os.path.join("./catalogues/{}/results".format(dataset), output_name)
+                            io.imsave(output_name, image_r)
+                            print('result saved at {}'.format(output_name))
 
-            mAP = statistics.mean(ap_arr)
-            mAP_tree = statistics.mean(ap_arr_tree)
-            mAP_sub = statistics.mean(ap_arr_sub)
-            print("mAP(GC): {}, mAP(CT): {}".format(mAP, mAP_tree)) """
+                    mAP = statistics.mean(ap_arr)
+                    mAP_tree = statistics.mean(ap_arr_tree)
+                    mAP_sub = statistics.mean(ap_arr_sub)
+                    print("mAP(GC): {}, mAP(CT): {}".format(mAP, mAP_tree)) """
+
+
+    if pargs.mode == 'test':
+
+        # Text embeddings model.
+        model_name = "RoBERTa"
+
+        # Whether to use in-training visual embeddings as queries.
+        # Remember to run gnn_search.py with -mode compute_test_queries before.
+        test_w_train_set = False
+
+        # Whether to use VETE-B query adjustment or not.
+        adjust_query = False
+
+        # Quantity of results to get in search.
+        results_per_query = 20
+
+        visual_embeddings = np.load("./catalogues/{}/embeddings/ResNet/visual_embeddings.npy".format(dataset))
+        text_embeddings = np.load("./catalogues/{}/embeddings/{}/text_embeddings.npy".format(dataset, model_name))
+        
+        visual_embeddings_catalog = "./catalogues/{}/ssearch/visual_embeddings_catalog.txt".format(dataset)
+        text_embeddings_catalog = "./catalogues/{}/ssearch/text_embeddings_catalog.txt".format(dataset)
+        text_embeddings = reorder_text_embeddings(text_embeddings, visual_embeddings_catalog, text_embeddings_catalog)
+
+        ssearch.features = visual_embeddings
+        ssearch.enable_search = True
+        original_features = np.copy(ssearch.features)
+
+        metric = 'cos'
+        #metric = "l2"
+        norm = 'None'
+
+        data_path = "./catalogues/{}/data/".format(dataset)
+        df = pd.read_excel(data_path + "categoryProductsES_EN.xlsx")
+
+        real_df = None
+
+        if test_w_train_set:
+
+            visual_embeddings_test = None
+
+            with open(visual_embeddings_catalog, 'r', encoding="cp1252") as file_ve:
+                lines_ve = file_ve.read().splitlines()
+
+            test_indexes = np.load("./catalogues/{}/ssearch/test_set_integers.npy".format(dataset))
+            eval_files = ["./catalogues/{}/test_from_train_set/".format(dataset) + lines_ve[idx] for idx in test_indexes]
+
+        else:
+
+            visual_embeddings_test = np.load("./catalogues/{}/embeddings/ResNet/visual_embeddings_test.npy".format(dataset))
+            visual_embeddings_test_catalog = "./catalogues/{}/ssearch/visual_embeddings_test_catalog.txt".format(dataset)
+
+            with open(visual_embeddings_test_catalog, 'r', encoding="cp1252") as file_ve:
+                lines_ve = file_ve.read().splitlines()
+            
+            test_indexes = None
+            eval_files = ["./catalogues/{}/test/".format(dataset) + line for line in lines_ve]
+
+
+        mAP_dictionary = {"ssearch" : ssearch,
+                          "visual_embeddings_test": visual_embeddings_test,
+                          "test_indexes": test_indexes,
+                          "eval_files" : eval_files,
+                          "metric" : metric,
+                          "norm" : norm,
+                          "adjust_query" : adjust_query,
+                          "original_embeddings" : original_features,
+                          "df" : df,
+                          "real_df" : real_df,
+                          "top" : results_per_query}
+        
+        #mAP_dictionary = None
+
+
+        similarity_func = get_cos_similarity_tensor
+        #similarity_func = get_cos_softmax_similarity_tensor
+        #similarity_func = get_sqrt_similarity_tensor
+        #similarity_func = get_sqrt_normmin_similarity_tensor
+
+        similarity_text = similarity_func(text_embeddings)
+        similarity_visual = similarity_func(visual_embeddings)
+
+        #units = 1024
+        units = visual_embeddings.shape[1]
+        lyr = tf.keras.layers.Dense(units)
+
+        weights_filename = "a"
+
+        model_gnn = GNN(adj=similarity_text, lyr=lyr)
+        model_gnn.load_weights(weights_filename)
+
+        new_visual_embeddings = model_gnn.call(inputs=visual_embeddings)
