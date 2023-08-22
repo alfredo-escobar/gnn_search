@@ -634,6 +634,16 @@ def get_k_random_pairs(similarity, k = 50, alpha = 10):
     return [similarity_idx[0][batch_indexes], similarity_idx[1][batch_indexes]]
 
 
+def adjust_sim_text(sim_text):
+    min_sim_text = tf.math.reduce_min(sim_text)
+    sim_text = sim_text - min_sim_text
+
+    max_sim_text = tf.math.reduce_max(sim_text)
+    sim_text = sim_text / max_sim_text
+
+    return sim_text
+
+
 def reduce_range_to_0_to_1(sim_text, sim_visual, margin=0.01):
 
     min_sim_text   = tf.math.reduce_min(sim_text)
@@ -677,6 +687,8 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
 
     similarity_text = similarity_func(text_embeddings)
     similarity_visual = similarity_func(visual_embeddings)
+
+    similarity_text = adjust_sim_text(similarity_text)
 
     #save_most_similar_pairs(similarity_text.numpy(), dataset)
 
