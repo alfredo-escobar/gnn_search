@@ -680,8 +680,8 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
 
     adjust_range = True
 
-    #similarity_func = get_cos_similarity_tensor
-    similarity_func = get_cos_softmax_similarity_tensor
+    similarity_func = get_cos_similarity_tensor
+    #similarity_func = get_cos_softmax_similarity_tensor
     #similarity_func = get_sqrt_similarity_tensor
     #similarity_func = get_sqrt_normmin_similarity_tensor
 
