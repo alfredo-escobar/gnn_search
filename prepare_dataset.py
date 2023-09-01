@@ -90,12 +90,17 @@ if __name__ == "__main__":
     model = "ResNet"
 
     create_folder("./catalogues/{}/data".format(dataset))
+
     create_folder("./catalogues/{}/data/word2vec".format(dataset))
     create_blank_file("./catalogues/{}/data/word2vec/placeholder".format(dataset))
 
     create_folder("./catalogues/{}/results".format(dataset))
+
     create_folder("./catalogues/{}/results/labels".format(dataset))
     create_blank_file("./catalogues/{}/results/labels/placeholder".format(dataset))
-    
+
+    create_folder("./catalogues/{}/results/weights".format(dataset))
+    create_blank_file("./catalogues/{}/results/weights/placeholder".format(dataset))
+
     generate_XLSX(dataset)
     generate_NP(dataset, model)
