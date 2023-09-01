@@ -43,7 +43,7 @@ def get_prob(similarity, similarity_idx, alpha, margin):
     return prob
 
 
-def loss_unet(similarity_visual, similarity_text, batch_indexes, alpha = 10.0, margin = 0.001):
+def loss_unet(similarity_visual, similarity_text, batch_indexes, alpha = 10.0, margin = 0.001, ratio = 0.8):
 
     similarity_idx = tf.transpose(tf.convert_to_tensor(batch_indexes))
 
@@ -65,5 +65,8 @@ def loss_unet(similarity_visual, similarity_text, batch_indexes, alpha = 10.0, m
 
     similars_addend = tf.maximum((prob_gt * tf.math.log(prob_gt / prob_pred)), 0)
     dissimilars_addend = tf.maximum(((1 - prob_gt) * tf.math.log((1 - prob_gt) / (1 - prob_pred))), 0)
+
+    similars_addend = tf.multiply(similars_addend, ratio)
+    dissimilars_addend = tf.multiply(dissimilars_addend, 1-ratio)
 
     return tf.reduce_mean(tf.add(similars_addend, dissimilars_addend)), sims_and_probs

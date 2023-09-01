@@ -569,7 +569,7 @@ def get_current_mAP(current_embeddings,
     return [mAP, mAP_tree, mAP_sub], results_dict
 
 
-def reorder_text_embeddings(text_embeddings, ve_catalog, te_catalog):
+def reorder_embeddings(visual_embeddings, text_embeddings, ve_catalog, te_catalog):
     # Necessary for both the visual and text embeddings
     # to be in the same order
 
@@ -577,13 +577,20 @@ def reorder_text_embeddings(text_embeddings, ve_catalog, te_catalog):
         lines_ve = file_ve.read().splitlines()
         lines_te = file_te.read().splitlines()
 
-    indices = np.zeros(len(lines_ve), dtype=np.int32)
-
+    indices_for_visual = []
+    indices_for_text = []
+    
     for i, element in enumerate(lines_ve):
-        indices[i] = lines_te.index(element[0:-4])
+        # element is the filename, element[0:-4] is the product name + id
 
-    reordered_text_embeddings = text_embeddings[indices]
-    return reordered_text_embeddings
+        if element[0:-4] in lines_te:
+            indices_for_visual.append(i)
+            indices_for_text.append(lines_te.index(element[0:-4]))
+    
+    np_idx_visual = np.asarray(indices_for_visual)
+    np_idx_text = np.asarray(indices_for_text)
+
+    return visual_embeddings[np_idx_visual], text_embeddings[np_idx_text]
 
 
 def get_k_random_pairs(similarity, k = 50, alpha = 10):
@@ -679,6 +686,9 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
     #mAP_dictionary = None
 
     adjust_range = True
+    eval_window = 10
+    loss_ratio = 0.8
+    loss_batch_size = 100
 
     similarity_func = get_cos_similarity_tensor
     #similarity_func = get_cos_softmax_similarity_tensor
@@ -737,10 +747,10 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
             else:
                 curr_similarity_text = similarity_text
 
-            batch_indexes = get_k_random_pairs(similarity=curr_similarity_text.numpy(), k=100)
+            batch_indexes = get_k_random_pairs(similarity=curr_similarity_text.numpy(), k=loss_batch_size)
 
             #loss = loss_by_visual_text_contrast(similarity_visual, curr_similarity_text, batch_indexes)
-            loss, sims_and_probs = loss_unet(similarity_visual, curr_similarity_text, batch_indexes)
+            loss, sims_and_probs = loss_unet(similarity_visual, curr_similarity_text, batch_indexes, ratio=loss_ratio)
 
         variables = t.watched_variables()
         grads = t.gradient(loss, variables)
@@ -751,8 +761,6 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
 
         historical_loss["iters"].append(it)
         historical_loss["losses"].append(loss.numpy().item())
-
-        eval_window = 10
 
         if (it % eval_window) == 1:
 
@@ -871,20 +879,20 @@ if __name__ == '__main__' :
 
         # Whether to use in-training visual embeddings as queries.
         # Remember to run gnn_search.py with -mode compute_test_queries before.
-        test_w_train_set = True
+        test_w_train_set = False
 
         # Whether to use VETE-B query adjustment or not.
         adjust_query = False
 
         # Quantity of results to get in search.
-        results_per_query = 100
+        results_per_query = 20
 
         visual_embeddings = np.load("./catalogues/{}/embeddings/ResNet/visual_embeddings.npy".format(dataset))
         text_embeddings = np.load("./catalogues/{}/embeddings/{}/text_embeddings.npy".format(dataset, model_name))
         
         visual_embeddings_catalog = "./catalogues/{}/ssearch/visual_embeddings_catalog.txt".format(dataset)
         text_embeddings_catalog = "./catalogues/{}/ssearch/text_embeddings_catalog.txt".format(dataset)
-        text_embeddings = reorder_text_embeddings(text_embeddings, visual_embeddings_catalog, text_embeddings_catalog)
+        visual_embeddings, text_embeddings = reorder_embeddings(visual_embeddings, text_embeddings, visual_embeddings_catalog, text_embeddings_catalog)
 
         ssearch.features = visual_embeddings
         ssearch.enable_search = True
