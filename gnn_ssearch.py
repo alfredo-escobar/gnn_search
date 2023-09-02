@@ -658,10 +658,10 @@ def reduce_range_to_0_to_1(sim_text, sim_visual, margin=0.01):
     min_overall = tf.math.minimum(min_sim_text, min_sim_visual)
 
     new_sim_text = sim_text - min_overall
-    new_sim_visual = sim_visual - min_overall
+    sim_visual = sim_visual - min_overall
 
     max_sim_text   = tf.math.reduce_max(new_sim_text)
-    max_sim_visual = tf.math.reduce_max(new_sim_visual)
+    max_sim_visual = tf.math.reduce_max(sim_visual)
     max_overall = tf.math.maximum(max_sim_text, max_sim_visual)
 
     
@@ -669,11 +669,11 @@ def reduce_range_to_0_to_1(sim_text, sim_visual, margin=0.01):
     new_sim_text *= (1 - 2*margin)
     new_sim_text += margin
 
-    new_sim_visual = new_sim_visual / max_overall
-    new_sim_visual *= (1 - 2*margin)
-    new_sim_visual += margin
+    sim_visual = sim_visual / max_overall
+    sim_visual *= (1 - 2*margin)
+    sim_visual += margin
 
-    return new_sim_text, new_sim_visual
+    return new_sim_text, sim_visual
 
 
 class GNN(tf.keras.Model):
