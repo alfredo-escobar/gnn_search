@@ -651,50 +651,44 @@ def adjust_sim_text(sim_text):
     return sim_text
 
 
-def reduce_range_to_0_to_1(sim_text, sim_visual, margin=0.01):
+def reduce_range_to_0_to_1(sim_text:SimilarityTensor, sim_visual:SimilarityTensor, margin=0.01):
 
-    min_sim_text   = tf.math.reduce_min(sim_text)
-    min_sim_visual = tf.math.reduce_min(sim_visual)
-    min_overall = tf.math.minimum(min_sim_text, min_sim_visual)
+    min_overall = tf.math.minimum(sim_text.realMin, sim_visual.realMin)
+    max_overall = tf.math.maximum(sim_text.realMax, sim_visual.realMax)
+    range_overall = max_overall - min_overall
 
-    new_sim_text = sim_text - min_overall
-    sim_visual = sim_visual - min_overall
+    sim_text_newMin = (sim_text.realMin - min_overall) / range_overall
+    sim_visual_newMin = (sim_visual.realMin - min_overall) / range_overall
+    sim_text_newMax = (sim_text.realMax - min_overall) / range_overall
+    sim_visual_newMax = (sim_visual.realMax - min_overall) / range_overall
+    #                             (makes min: 0)      then/    makes max: 1
 
-    max_sim_text   = tf.math.reduce_max(new_sim_text)
-    max_sim_visual = tf.math.reduce_max(sim_visual)
-    max_overall = tf.math.maximum(max_sim_text, max_sim_visual)
+    sim_text_newMin = (sim_text_newMin * (1 - 2*margin)) + margin
+    sim_visual_newMin = (sim_visual_newMin * (1 - 2*margin)) + margin
+    sim_text_newMax = (sim_text_newMax * (1 - 2*margin)) + margin
+    sim_visual_newMax = (sim_visual_newMax * (1 - 2*margin)) + margin
+    #                      (makes max: 1 -2*margin)    then+ makes min: margin
+    #                                                        and max: 1-margin
 
-    
-    new_sim_text = new_sim_text / max_overall
-    new_sim_text *= (1 - 2*margin)
-    new_sim_text += margin
-
-    sim_visual = sim_visual / max_overall
-    sim_visual *= (1 - 2*margin)
-    sim_visual += margin
-
-    return new_sim_text, sim_visual
+    sim_text.adjust_range(sim_text_newMin, sim_text_newMax)
+    sim_visual.adjust_range(sim_visual_newMin, sim_visual_newMax)
 
 
 class GNN(tf.keras.Model):
-    def __init__(self, adj, lyr):
-        # adj: text similarity tensor
+    def __init__(self, adj:SimilarityTensor, lyr):
+        # adj: text similarity
         super(GNN, self).__init__()
         self.transform = lyr
         self.adj = adj
     
     def call(self, inputs):
         # inputs: visual embeddings matrix
+        self.adj.adjust_range(0.0, 1.0)
+        
         seq_fts = self.transform(inputs)
-        ret_fts = tf.matmul(self.adj, seq_fts)
+        ret_fts = tf.matmul(self.adj.tensor, seq_fts)
         new_fts = tf.nn.relu(ret_fts)
         return new_fts
-
-
-# def gnn(fts, adj, transform, activation):
-#     seq_fts = transform(fts)
-#     ret_fts = tf.matmul(adj, seq_fts)
-#     return activation(ret_fts)
 
 
 def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_dictionary = None, test_w_train_set = False):
@@ -710,8 +704,11 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
     #similarity_func = get_sqrt_similarity_tensor
     #similarity_func = get_sqrt_normmin_similarity_tensor
 
-    similarity_text = similarity_func(text_embeddings)
-    similarity_visual = similarity_func(visual_embeddings)
+    sim_text = SimilarityTensor(text_embeddings, similarity_func)
+    sim_visual = SimilarityTensor(visual_embeddings, similarity_func)
+
+    #similarity_text = similarity_func(text_embeddings)
+    #similarity_visual = similarity_func(visual_embeddings)
 
     #similarity_text = adjust_sim_text(similarity_text)
 
@@ -720,7 +717,7 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
     #units = 1024
     units = visual_embeddings.shape[1]
     lyr = tf.keras.layers.Dense(units)
-    model_gnn = GNN(adj=similarity_text, lyr=lyr)
+    model_gnn = GNN(adj=sim_text, lyr=lyr)
 
     #optimizer = tf.keras.optimizers.SGD(learning_rate=lr, momentum=0.9)
     optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
@@ -742,7 +739,7 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
         # OJO: CURRENT_EMBEDDINGS DEBE SER VISUAL, NO TEXTUAL
         current_mAP, results_dict = get_current_mAP(current_embeddings = visual_embeddings,
                                                     current_iteration = 0,
-                                                    sim_visual = similarity_visual,
+                                                    sim_visual = sim_visual.tensor,
                                                     **mAP_dictionary)
         search_results_list[0] = results_dict
         
@@ -762,17 +759,15 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
             #new_visual_embeddings = gnn(visual_embeddings, similarity_text, lyr, tf.nn.relu)
             new_visual_embeddings = model_gnn.call(inputs=visual_embeddings)
 
-            similarity_visual = similarity_func(new_visual_embeddings)
+            sim_visual = SimilarityTensor(new_visual_embeddings, similarity_func)
 
             if adjust_range:
-                curr_similarity_text, similarity_visual = reduce_range_to_0_to_1(similarity_text, similarity_visual)
-            else:
-                curr_similarity_text = similarity_text
+                reduce_range_to_0_to_1(sim_text, sim_visual)
 
-            batch_indexes = get_k_random_pairs(similarity=curr_similarity_text.numpy(), k=loss_batch_size)
+            batch_indexes = get_k_random_pairs(similarity=sim_text.tensor.numpy(), k=loss_batch_size)
 
             #loss = loss_by_visual_text_contrast(similarity_visual, curr_similarity_text, batch_indexes)
-            loss, sims_and_probs = loss_unet(similarity_visual, curr_similarity_text, batch_indexes, ratio=loss_ratio)
+            loss, sims_and_probs = loss_unet(sim_visual.tensor, sim_text.tensor, batch_indexes, ratio=loss_ratio)
 
         variables = t.watched_variables()
         grads = t.gradient(loss, variables)
@@ -792,7 +787,7 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
 
                 current_mAP, results_dict = get_current_mAP(current_embeddings = new_visual_embeddings.numpy(),
                                                             current_iteration = it,
-                                                            sim_visual = similarity_visual,
+                                                            sim_visual = sim_visual.tensor,
                                                             **mAP_dictionary)
                 search_results_list[it] = results_dict
 
