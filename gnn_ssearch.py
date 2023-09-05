@@ -92,7 +92,13 @@ class SSearch :
             data_path = os.path.abspath(self.configuration.get_data_dir())
             self.filenames = [os.path.join(data_path, "train", filename.strip()) for filename in f_in]
             # self.filenames = [filename.strip() for filename in f_in ]
-        self.data_size = len(self.filenames)    
+        self.data_size = len(self.filenames)
+
+    def load_catalog_from_list(self, catalog_list):
+        data_path = os.path.abspath(self.configuration.get_data_dir())
+        self.filenames = [os.path.join(data_path, "train", filename.strip()) for filename in catalog_list]
+        # self.filenames = [filename.strip() for filename in f_in ]
+        self.data_size = len(self.filenames)
             
     def get_filenames(self, idxs):
         return [self.filenames[i] for i in idxs]
@@ -579,18 +585,22 @@ def reorder_embeddings(visual_embeddings, text_embeddings, ve_catalog, te_catalo
 
     indices_for_visual = []
     indices_for_text = []
+    final_lines_ve = []
     
     for i, element in enumerate(lines_ve):
         # element is the filename, element[0:-4] is the product name + id
 
-        if element[0:-4] in lines_te:
-            indices_for_visual.append(i)
-            indices_for_text.append(lines_te.index(element[0:-4]))
+        if (dataset != "Pepeganga") or not (i & 1):
+
+            if element[0:-4] in lines_te:
+                indices_for_visual.append(i)
+                indices_for_text.append(lines_te.index(element[0:-4]))
+                final_lines_ve.append(element)
     
     np_idx_visual = np.asarray(indices_for_visual)
     np_idx_text = np.asarray(indices_for_text)
 
-    return visual_embeddings[np_idx_visual], text_embeddings[np_idx_text]
+    return visual_embeddings[np_idx_visual], text_embeddings[np_idx_text], final_lines_ve
 
 
 def get_k_random_pairs(similarity, k = 50, alpha = 10):
@@ -914,10 +924,11 @@ if __name__ == '__main__' :
         
         visual_embeddings_catalog = "./catalogues/{}/ssearch/visual_embeddings_catalog.txt".format(dataset)
         text_embeddings_catalog = "./catalogues/{}/ssearch/text_embeddings_catalog.txt".format(dataset)
-        visual_embeddings, text_embeddings = reorder_embeddings(visual_embeddings, text_embeddings, visual_embeddings_catalog, text_embeddings_catalog)
+        visual_embeddings, text_embeddings, lines_ve = reorder_embeddings(visual_embeddings, text_embeddings, visual_embeddings_catalog, text_embeddings_catalog)
 
         ssearch.features = visual_embeddings
         ssearch.enable_search = True
+        ssearch.load_catalog_from_list(lines_ve)
         original_features = np.copy(ssearch.features)
 
         metric = 'cos'
@@ -932,9 +943,6 @@ if __name__ == '__main__' :
         if test_w_train_set:
 
             visual_embeddings_test = None
-
-            with open(visual_embeddings_catalog, 'r', encoding="cp1252") as file_ve:
-                lines_ve = file_ve.read().splitlines()
 
             test_indexes = np.load("./catalogues/{}/ssearch/test_set_integers.npy".format(dataset))
             eval_files = ["./catalogues/{}/test_from_train_set/".format(dataset) + lines_ve[idx] for idx in test_indexes]
