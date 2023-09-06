@@ -707,7 +707,7 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
 
     adjust_range = True
     eval_window = 10
-    loss_ratio = 0.8
+    loss_ratio = 0.65
     loss_batch_size = 100
 
     similarity_func = get_cos_similarity_tensor
