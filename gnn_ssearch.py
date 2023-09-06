@@ -683,8 +683,8 @@ class GNN(tf.keras.Model):
     
     def call(self, inputs):
         # inputs: visual embeddings matrix
-        #self.adj.adjust_range(0.0, 1.0)
-        self.adj.reset_range()
+        self.adj.adjust_range(0.0, 1.0)
+        #self.adj.reset_range()
         
         seq_fts = self.transform(inputs)
         ret_fts = tf.matmul(self.adj.tensor, seq_fts)
@@ -800,6 +800,9 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
     plot_loss(historical_loss, dataset)
     plot_mAP(historical_mAP, dataset)
     #plot_prob_gt(all_sims_and_probs)
+
+    with open('./catalogues/{}/results/mAP.json'.format(dataset), "w") as json_file:
+        json.dump(historical_mAP, json_file)
     
     save_sims_and_probs(all_sims_and_probs, dataset)
     
