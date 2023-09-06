@@ -1,2 +1,2 @@
-model_checkpoint_path: "weights_iter_1"
-all_model_checkpoint_paths: "weights_iter_1"
+model_checkpoint_path: "weights_iter_101"
+all_model_checkpoint_paths: "weights_iter_101"
