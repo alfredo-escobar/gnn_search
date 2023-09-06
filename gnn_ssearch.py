@@ -683,7 +683,8 @@ class GNN(tf.keras.Model):
     
     def call(self, inputs):
         # inputs: visual embeddings matrix
-        self.adj.adjust_range(0.0, 1.0)
+        #self.adj.adjust_range(0.0, 1.0)
+        self.adj.reset_range()
         
         seq_fts = self.transform(inputs)
         ret_fts = tf.matmul(self.adj.tensor, seq_fts)

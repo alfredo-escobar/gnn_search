@@ -32,8 +32,13 @@ a = tf.Variable([[5, 8, 1],
 
 b = a * 1
 c = SimilarityTensor(b)
+
 print("breakpoint")
 
 b = b * -1
+
+print("breakpoint")
+
+c.adjust_range(0,8)
 
 print("breakpoint")
