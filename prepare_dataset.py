@@ -102,5 +102,8 @@ if __name__ == "__main__":
     create_folder("./catalogues/{}/results/weights".format(dataset))
     create_blank_file("./catalogues/{}/results/weights/placeholder".format(dataset))
 
+    create_folder("./catalogues/{}/results/search_results".format(dataset))
+    create_blank_file("./catalogues/{}/results/search_results/placeholder".format(dataset))
+
     generate_XLSX(dataset)
     generate_NP(dataset, model)

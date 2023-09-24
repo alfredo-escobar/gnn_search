@@ -90,13 +90,13 @@ class SSearch :
     def load_catalog(self, catalog):
         with open(catalog, encoding="cp1252") as f_in :
             data_path = os.path.abspath(self.configuration.get_data_dir())
-            self.filenames = [os.path.join(data_path, "train", filename.strip()) for filename in f_in]
+            self.filenames = [os.path.join(data_path, dataset, "train", filename.strip()) for filename in f_in]
             # self.filenames = [filename.strip() for filename in f_in ]
         self.data_size = len(self.filenames)
 
     def load_catalog_from_list(self, catalog_list):
         data_path = os.path.abspath(self.configuration.get_data_dir())
-        self.filenames = [os.path.join(data_path, "train", filename.strip()) for filename in catalog_list]
+        self.filenames = [os.path.join(data_path, dataset, "train", filename.strip()) for filename in catalog_list]
         # self.filenames = [filename.strip() for filename in f_in ]
         self.data_size = len(self.filenames)
             
@@ -442,7 +442,7 @@ def avg_precision(y, y_pred):
 
 
 def get_current_mAP_og(current_embeddings,
-                       ssearch,
+                       ssearch:SSearch,
                        eval_files,
                        metric,
                        norm,
@@ -482,7 +482,7 @@ def get_current_mAP_og(current_embeddings,
 def get_current_mAP(current_embeddings,
                     current_iteration,
                     sim_visual,
-                    ssearch,
+                    ssearch:SSearch,
                     visual_embeddings_test,
                     test_indexes,
                     eval_files,
@@ -509,6 +509,8 @@ def get_current_mAP(current_embeddings,
         "idx_dict" : {}
     }
 
+    all_r_filenames = []
+
     GC_list_all = []
     CT_list_all = []
     SC_list_all = []
@@ -527,6 +529,8 @@ def get_current_mAP(current_embeddings,
         idx, dist_sorted, q_fv, data_search = ssearch.search(im_query, metric=metric, norm=norm, top=top, adjust_query=adjust_query, original_embeddings=original_embeddings, df=df, query_is_feature=True)         
         r_filenames = ssearch.get_filenames(idx)
         
+        r_filenames.insert(0, fquery)
+
         base_category, products = get_product_and_category(r_filenames, dataframe=df, real_df=real_df)
         ap, ap_tree, ap_sub = avg_precision(base_category, products)
         ap_arr.append(ap)
@@ -549,6 +553,7 @@ def get_current_mAP(current_embeddings,
             SC_list_all.append(SC_list)
 
         if test_indexes is not None:
+            # Query from training set
             results_dict["idx_dict"][test_indexes[i].item()] = []
 
             for result_idx in idx:
@@ -557,10 +562,12 @@ def get_current_mAP(current_embeddings,
 
         if save_images:
             image_r= ssearch.draw_result(r_filenames)
-            output_name = os.path.basename(fquery) + '_{}_{}_result.png'.format(metric, norm)
+            output_name = os.path.basename(fquery) + '.png'
             output_name = os.path.join("./catalogues/{}/results/iter_{}".format(dataset, current_iteration), output_name)
             io.imsave(output_name, image_r)
             print('result saved at {}'.format(output_name))
+        else:
+            all_r_filenames.append(r_filenames)
 
     mAP = statistics.mean(ap_arr)
     mAP_tree = statistics.mean(ap_arr_tree)
@@ -569,6 +576,10 @@ def get_current_mAP(current_embeddings,
 
     if save_labels:
         save_result_labels_csv(GC_list_all, CT_list_all, SC_list_all, dataset, current_iteration)
+    
+    if not save_images:
+        with open('./catalogues/{}/results/search_results/iter_{}.json'.format(dataset, current_iteration), "w") as json_file:
+            json.dump(all_r_filenames, json_file)
 
     results_dict["mAP"] = mAP
 
@@ -702,12 +713,12 @@ class GNN(tf.keras.Model):
         return new_fts
 
 
-def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_dictionary = None, test_w_train_set = False):
+def train_visual(visual_embeddings, text_embeddings, mAP_dictionary = None, test_w_train_set = False):
     #mAP_dictionary = None
 
     adjust_range = True
     eval_window = 10
-    loss_ratio = 0.65
+    loss_ratio = 0.5
     loss_batch_size = 100
 
     similarity_func = get_cos_similarity_tensor
@@ -729,6 +740,12 @@ def train_visual(visual_embeddings, text_embeddings, iterations, lr, mAP_diction
     units = visual_embeddings.shape[1]
     lyr = tf.keras.layers.Dense(units)
     model_gnn = GNN(adj=sim_text, lyr=lyr)
+
+    # Quantity of training iterations.
+    iterations = 101
+
+    #lr = 0.01
+    lr = tf.keras.optimizers.schedules.CosineDecay(initial_learning_rate=0.03, decay_steps = iterations)
 
     #optimizer = tf.keras.optimizers.SGD(learning_rate=lr, momentum=0.9)
     optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
@@ -905,15 +922,12 @@ if __name__ == '__main__' :
         # Text embeddings model.
         model_name = "RoBERTa"
         
-        # Quantity of training iterations.
-        iterations = 101
-
         # Whether to use in-training visual embeddings as queries.
         # Remember to run gnn_search.py with -mode compute_test_queries before.
         test_w_train_set = False
 
         # Whether to use VETE-B query adjustment or not.
-        adjust_query = False
+        adjust_query = True
 
         # Quantity of results to get in search.
         results_per_query = 20
@@ -970,12 +984,7 @@ if __name__ == '__main__' :
                           "real_df" : real_df,
                           "top" : results_per_query}
         
-
-        # lr = 0.01
-        lr_decayed_fn = tf.keras.optimizers.schedules.CosineDecay(initial_learning_rate=0.03,
-                                                                  decay_steps = iterations)
-        
-        new_visual_embeddings = train_visual(visual_embeddings, text_embeddings, iterations, lr_decayed_fn, mAP_dictionary, test_w_train_set)
+        new_visual_embeddings = train_visual(visual_embeddings, text_embeddings, mAP_dictionary, test_w_train_set)
         
 
 
@@ -1033,7 +1042,7 @@ if __name__ == '__main__' :
         
         visual_embeddings_catalog = "./catalogues/{}/ssearch/visual_embeddings_catalog.txt".format(dataset)
         text_embeddings_catalog = "./catalogues/{}/ssearch/text_embeddings_catalog.txt".format(dataset)
-        text_embeddings = reorder_text_embeddings(text_embeddings, visual_embeddings_catalog, text_embeddings_catalog)
+        visual_embeddings, text_embeddings, lines_ve = reorder_embeddings(visual_embeddings, text_embeddings, visual_embeddings_catalog, text_embeddings_catalog)
 
         ssearch.features = visual_embeddings
         ssearch.enable_search = True
