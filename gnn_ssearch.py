@@ -614,7 +614,7 @@ def reorder_embeddings(visual_embeddings, text_embeddings, ve_catalog, te_catalo
     return visual_embeddings[np_idx_visual], text_embeddings[np_idx_text], final_lines_ve
 
 
-def get_k_random_pairs(similarity, k = 50, alpha = 10, plots = False):
+def get_k_random_pairs(similarity, k = 50, alpha = 0.5, plots = False):
 
     # 2D indexes for the similarity matrix:
     similarity_idx = np.triu_indices(similarity.shape[0])
@@ -707,7 +707,7 @@ class GNN(tf.keras.Model):
     
     def call(self, inputs):
         # inputs: visual embeddings matrix
-        self.adj.adjust_range(0.0, 1.0)
+        #self.adj.adjust_range(0.0, 1.0)
         #self.adj.reset_range()
         
         seq_fts = self.transform(inputs)
@@ -719,7 +719,7 @@ class GNN(tf.keras.Model):
 def train_visual(visual_embeddings, text_embeddings, mAP_dictionary = None, test_w_train_set = False):
     #mAP_dictionary = None
 
-    adjust_range = True
+    adjust_range = False
     eval_window = 10
     loss_ratio = 0.5
     loss_batch_size = 100
