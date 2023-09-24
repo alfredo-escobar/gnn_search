@@ -18,10 +18,13 @@ cprofile_stats.txt
 
 datasets_conv4_block6_out.rar
 
+catalogues/*/test
+catalogues/*/train
+catalogues/*/eval
 
-*.png
-*.jpeg
-*.jpg
+catalogues/*/results/search_results/*/*.png
+catalogues/*/results/search_results/*/*.jpeg
+catalogues/*/results/search_results/*/*.jpg
 
 /catalogues/Pepeganga/ssearch/features.np
 /catalogues/Pepeganga/embeddings/ResNet/visual_embeddings.npy

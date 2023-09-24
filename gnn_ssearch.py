@@ -614,7 +614,7 @@ def reorder_embeddings(visual_embeddings, text_embeddings, ve_catalog, te_catalo
     return visual_embeddings[np_idx_visual], text_embeddings[np_idx_text], final_lines_ve
 
 
-def get_k_random_pairs(similarity, k = 50, alpha = 10):
+def get_k_random_pairs(similarity, k = 50, alpha = 10, plots = False):
 
     # 2D indexes for the similarity matrix:
     similarity_idx = np.triu_indices(similarity.shape[0])
@@ -622,7 +622,8 @@ def get_k_random_pairs(similarity, k = 50, alpha = 10):
     # 1D array with similarity scores of upper half of matrix
     similarity_triu = similarity[similarity_idx]
 
-    #plot_histogram_sim(similarity_triu)
+    if plots:
+        plot_histogram_sim(similarity_triu, dataset)
 
     # 1D indexes for the 2D indexes for the similarity matrix:
     indexes = np.arange(similarity_idx[0].shape[0])
@@ -639,7 +640,8 @@ def get_k_random_pairs(similarity, k = 50, alpha = 10):
     random_indexes_similar = np.random.choice(indexes, k, replace=False, p=probs)
 
     #print("sim_min", np.min(probs), "sim_sum", np.sum(probs))
-    #plot_probs(similarity_triu, probs)
+    if plots:
+        plot_probs(similarity_triu, probs, dataset, "similars")
 
     probs = -1 * similarity_triu
     probs -= np.min(probs)
@@ -653,9 +655,10 @@ def get_k_random_pairs(similarity, k = 50, alpha = 10):
     random_indexes_dissimilar = np.random.choice(indexes, k, replace=False, p=probs)
 
     #print("dissim_min", np.min(probs), "dissim_sum", np.sum(probs))
-    #plot_probs(similarity_triu, probs)
-
-    #plot_histogram_randoms(similarity_triu, random_indexes_similar, random_indexes_dissimilar)
+    if plots:
+        plot_probs(similarity_triu, probs, dataset, "dissimilars")
+        plot_histogram_randoms(similarity_triu, random_indexes_similar, random_indexes_dissimilar, dataset)
+        _ = input("1st iter plots saved")
     
     batch_indexes = np.concatenate((random_indexes_similar, random_indexes_dissimilar))
 
@@ -750,8 +753,6 @@ def train_visual(visual_embeddings, text_embeddings, mAP_dictionary = None, test
     #optimizer = tf.keras.optimizers.SGD(learning_rate=lr, momentum=0.9)
     optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 
-    eval_window = 10
-
     # For plotting purposes:
     historical_loss = {"iters" : [], "losses" : []}
     historical_mAP = {"iters" : [], "mAP_GC" : [], "mAP_CT" : [], "mAP_SC" : []}
@@ -791,8 +792,9 @@ def train_visual(visual_embeddings, text_embeddings, mAP_dictionary = None, test
 
             if adjust_range:
                 reduce_range_to_0_to_1(sim_text, sim_visual)
-
-            batch_indexes = get_k_random_pairs(similarity=sim_text.tensor.numpy(), k=loss_batch_size)
+            
+            plot_randoms = True if it == 1 else False
+            batch_indexes = get_k_random_pairs(similarity=sim_text.tensor.numpy(), k=loss_batch_size, plots=plot_randoms)
 
             #loss = loss_by_visual_text_contrast(similarity_visual, curr_similarity_text, batch_indexes)
             loss, sims_and_probs = loss_unet(sim_visual.tensor, sim_text.tensor, batch_indexes, ratio=loss_ratio)
