@@ -368,6 +368,7 @@ def get_product_and_category(r_filenames, dataframe, real_df=None):
         filename = os.path.splitext(base)[0]
         name_and_productid = filename.rsplit('_', 1)
         print(name_and_productid)
+        print(categories = df.loc[df['Title'] == name_and_productid[0], ["GlobalCategoryEN", "CategoryTree", "SubCategory"]])
         if real_df is not None:
             try:
                 categories = df.loc[(df['Title'] == name_and_productid[0]) & (str(df['ProductId']) == name_and_productid[1]), ["GlobalCategoryEN", "CategoryTree", "SubCategory"]].values[0].tolist()
