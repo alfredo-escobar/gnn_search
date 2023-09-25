@@ -367,8 +367,8 @@ def get_product_and_category(r_filenames, dataframe, real_df=None):
         base = os.path.basename(file)
         filename = os.path.splitext(base)[0]
         name_and_productid = filename.rsplit('_', 1)
-        print(name_and_productid)
-        print(df.loc[df['Title'] == name_and_productid[0], ["GlobalCategoryEN", "CategoryTree", "SubCategory"]])
+        #print(name_and_productid)
+        #print(df.loc[df['Title'] == name_and_productid[0], ["GlobalCategoryEN", "CategoryTree", "SubCategory"]])
         if real_df is not None:
             try:
                 categories = df.loc[(df['Title'] == name_and_productid[0]) & (str(df['ProductId']) == name_and_productid[1]), ["GlobalCategoryEN", "CategoryTree", "SubCategory"]].values[0].tolist()
@@ -616,7 +616,7 @@ def reorder_embeddings(visual_embeddings, text_embeddings, ve_catalog, te_catalo
     return visual_embeddings[np_idx_visual], text_embeddings[np_idx_text], final_lines_ve
 
 
-def get_k_random_pairs(similarity, k = 50, alpha = 0.5, plots = False):
+def get_k_random_pairs(similarity, k = 50, alpha = 5, plots = False):
 
     # 2D indexes for the similarity matrix:
     similarity_idx = np.triu_indices(similarity.shape[0])
