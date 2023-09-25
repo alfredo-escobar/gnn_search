@@ -38,6 +38,11 @@ def draw_result(filenames, write_data=False, similarity=None, distance=None):
         x = pos % w
         #y = np.int(np.floor(pos / w)) * h_i
         y = int(np.floor(pos / w)) * h_i
+
+        if i!=0:
+            filename = os.path.basename(filename)
+            filename = "./catalogues/{}/train/{}".format(dataset, filename)
+
         image = data.read_image(filename, 3)
         
         if write_data:
