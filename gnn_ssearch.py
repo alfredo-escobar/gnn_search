@@ -616,7 +616,7 @@ def reorder_embeddings(visual_embeddings, text_embeddings, ve_catalog, te_catalo
     return visual_embeddings[np_idx_visual], text_embeddings[np_idx_text], final_lines_ve
 
 
-def get_k_random_pairs(similarity, k = 50, alpha = 10, plots = False):
+def get_k_random_pairs(similarity, k = 50, alpha = 0.5, plots = False):
 
     # 2D indexes for the similarity matrix:
     similarity_idx = np.triu_indices(similarity.shape[0])
@@ -726,8 +726,8 @@ def train_visual(visual_embeddings, text_embeddings, mAP_dictionary = None, test
     loss_ratio = 0.5
     loss_batch_size = 100
 
-    similarity_func = get_cos_similarity_tensor
-    #similarity_func = get_cos_softmax_similarity_tensor
+    #similarity_func = get_cos_similarity_tensor
+    similarity_func = get_cos_softmax_similarity_tensor
     #similarity_func = get_sqrt_similarity_tensor
     #similarity_func = get_sqrt_normmin_similarity_tensor
 
