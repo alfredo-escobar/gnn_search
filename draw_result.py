@@ -43,7 +43,10 @@ def draw_result(filenames, write_data=False, similarity=None, distance=None):
             filename = os.path.basename(filename)
             filename = "./catalogues/{}/train/{}".format(dataset, filename)
 
-        image = data.read_image(filename, 3)
+        try:
+            image = data.read_image(filename, 3)
+        except:
+            continue
         
         if write_data:
             ### Add text with the product id
