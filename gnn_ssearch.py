@@ -726,8 +726,8 @@ def train_visual(visual_embeddings, text_embeddings, mAP_dictionary = None, test
     loss_ratio = 0.5
     loss_batch_size = 100
 
-    similarity_func = get_cos_similarity_tensor
-    #similarity_func = get_cos_softmax_similarity_tensor
+    #similarity_func = get_cos_similarity_tensor
+    similarity_func = get_cos_softmax_similarity_tensor
     #similarity_func = get_sqrt_similarity_tensor
     #similarity_func = get_sqrt_normmin_similarity_tensor
 
