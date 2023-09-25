@@ -502,7 +502,7 @@ def get_current_mAP(current_embeddings,
     ap_arr_tree = []
     ap_arr_sub = []
 
-    save_labels = True
+    save_labels = False
     save_images = False
 
     print("Computing mAP")
@@ -709,7 +709,7 @@ class GNN(tf.keras.Model):
     
     def call(self, inputs):
         # inputs: visual embeddings matrix
-        #self.adj.adjust_range(0.0, 1.0)
+        self.adj.adjust_range(0.0, 1.0)
         #self.adj.reset_range()
         
         seq_fts = self.transform(inputs)
@@ -721,13 +721,13 @@ class GNN(tf.keras.Model):
 def train_visual(visual_embeddings, text_embeddings, mAP_dictionary = None, test_w_train_set = False):
     #mAP_dictionary = None
 
-    adjust_range = False
+    adjust_range = True
     eval_window = 10
     loss_ratio = 0.5
     loss_batch_size = 100
 
-    #similarity_func = get_cos_similarity_tensor
-    similarity_func = get_cos_softmax_similarity_tensor
+    similarity_func = get_cos_similarity_tensor
+    #similarity_func = get_cos_softmax_similarity_tensor
     #similarity_func = get_sqrt_similarity_tensor
     #similarity_func = get_sqrt_normmin_similarity_tensor
 
@@ -783,8 +783,8 @@ def train_visual(visual_embeddings, text_embeddings, mAP_dictionary = None, test
 
         print("Training iteration", it)
 
-        if (it % eval_window) == 1:
-            model_gnn.save_weights('./catalogues/{}/results/weights/weights_iter_{}'.format(dataset, it))
+        # if (it % eval_window) == 1:
+        #     model_gnn.save_weights('./catalogues/{}/results/weights/weights_iter_{}'.format(dataset, it))
 
         with tf.GradientTape() as t:
             #new_visual_embeddings = gnn(visual_embeddings, similarity_text, lyr, tf.nn.relu)
@@ -795,7 +795,8 @@ def train_visual(visual_embeddings, text_embeddings, mAP_dictionary = None, test
             if adjust_range:
                 reduce_range_to_0_to_1(sim_text, sim_visual)
             
-            plot_randoms = True if it == 1 else False
+            #plot_randoms = True if it == 1 else False
+            plot_randoms = False
             batch_indexes = get_k_random_pairs(similarity=sim_text.tensor.numpy(), k=loss_batch_size, plots=plot_randoms)
 
             #loss = loss_by_visual_text_contrast(similarity_visual, curr_similarity_text, batch_indexes)
@@ -835,7 +836,7 @@ def train_visual(visual_embeddings, text_embeddings, mAP_dictionary = None, test
     with open('./catalogues/{}/results/mAP.json'.format(dataset), "w") as json_file:
         json.dump(historical_mAP, json_file)
     
-    save_sims_and_probs(all_sims_and_probs, dataset)
+    #save_sims_and_probs(all_sims_and_probs, dataset)
     
     if test_w_train_set:
         # JSON to be used by the "similar_explorer" web app
