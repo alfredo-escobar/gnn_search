@@ -14,7 +14,7 @@ def plot_mAP(historical_mAP, dataset):
         #plt.xticks(color='w')
         plt.legend()
         #plt.show()
-        plt.savefig('./catalogues/{}/results/mAP.pdf'.format(dataset))
+        plt.savefig('./catalogues/{}/results/mAP.png'.format(dataset))
 
 
 def plot_loss(historical_loss, dataset):
@@ -26,18 +26,19 @@ def plot_loss(historical_loss, dataset):
     ax.set_title('Loss in training')
 
     #plt.show()
-    plt.savefig('./catalogues/{}/results/loss.pdf'.format(dataset))
+    plt.savefig('./catalogues/{}/results/loss.png'.format(dataset))
 
 
-def plot_probs(similarity_1D, probs):
+def plot_probs(similarity_1D, probs, dataset, label):
     fig, ax = plt.subplots()
     ax.scatter(similarity_1D, probs)
     ax.set_xlabel("Similarity score")
     ax.set_ylabel("Probability of being chosen")
-    plt.show()
+    #plt.show()
+    plt.savefig('./catalogues/{}/results/probs_{}.png'.format(dataset, label))
 
 
-def plot_histogram_randoms(similarity_1D, random_indexes_similar, random_indexes_dissimilar):
+def plot_histogram_randoms(similarity_1D, random_indexes_similar, random_indexes_dissimilar, dataset):
     num_bins = 50
 
     fig, ax = plt.subplots()
@@ -57,10 +58,11 @@ def plot_histogram_randoms(similarity_1D, random_indexes_similar, random_indexes
 
     # Tweak spacing to prevent clipping of ylabel
     fig.tight_layout()
-    plt.show()
+    #plt.show()
+    plt.savefig('./catalogues/{}/results/histogram_randoms.png'.format(dataset))
 
 
-def plot_histogram_sim(similarity_1D):
+def plot_histogram_sim(similarity_1D, dataset):
     num_bins = 50
 
     fig, ax = plt.subplots()
@@ -77,7 +79,9 @@ def plot_histogram_sim(similarity_1D):
 
     # Tweak spacing to prevent clipping of ylabel
     fig.tight_layout()
-    plt.show()
+    #plt.show()
+    plt.savefig('./catalogues/{}/results/histogram_sim.png'.format(dataset))
+
 
 def plot_prob_gt(all_sims_and_probs):
     num_bins = 50

@@ -47,10 +47,10 @@ def loss_unet(similarity_visual, similarity_text, batch_indexes, alpha = 10.0, m
 
     similarity_idx = tf.transpose(tf.convert_to_tensor(batch_indexes))
 
-    # prob_gt = get_prob(similarity_text, similarity_idx, alpha, margin)
-    prob_gt = tf.gather_nd(similarity_text, similarity_idx)
-    prob_pred = tf.gather_nd(similarity_visual, similarity_idx)
-    # prob_pred = get_prob(similarity_visual, similarity_idx, alpha, margin)
+    prob_gt = get_prob(similarity_text, similarity_idx, alpha, margin)
+    #prob_gt = tf.gather_nd(similarity_text, similarity_idx)
+    #prob_pred = tf.gather_nd(similarity_visual, similarity_idx)
+    prob_pred = get_prob(similarity_visual, similarity_idx, alpha, margin)
 
     sims_and_probs = {
         "node_1" : batch_indexes[0],

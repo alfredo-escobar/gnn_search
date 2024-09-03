@@ -1,6 +1,32 @@
 import tensorflow as tf
 
 
+class SimilarityTensor():
+    def __init__(self, embeddings, similarity_func):
+        self.tensor = similarity_func(embeddings)
+        self.realMin = tf.math.reduce_min(self.tensor)
+        self.realMax = tf.math.reduce_max(self.tensor)
+    
+    def adjust_range(self, newMin, newMax, margin=0.0):
+
+        newRange = newMax - newMin
+
+        self.tensor = self.tensor - tf.math.reduce_min(self.tensor)
+        # Current min value is 0
+
+        self.tensor = self.tensor / tf.math.reduce_max(self.tensor)
+        # Current max value is 1
+        self.tensor = self.tensor * (newRange - 2*margin)
+        # Current max value is newRange -2*margin
+
+        self.tensor = self.tensor + newMin + margin
+        # Current min value is newMin + margin
+        # Current max value is newMax - margin
+    
+    def reset_range(self):
+        self.adjust_range(self.realMin, self.realMax)
+
+
 def get_euclidean_distances(embeddings):
 
     print("---Computing euclidean distances...---")
